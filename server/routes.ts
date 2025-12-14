@@ -2568,5 +2568,71 @@ Format your response as JSON with the following structure:
     }
   });
 
+  // ===== USER PROFILE ROUTES =====
+
+  const profileUpdateSchema = z.object({
+    displayName: z.string().max(100).nullable().optional(),
+    bio: z.string().max(2000).nullable().optional(),
+    avatarUrl: z.string().url().nullable().optional(),
+    backgroundUrl: z.string().url().nullable().optional(),
+    youtubeVideos: z.array(z.string().url()).nullable().optional(),
+    audioFiles: z.array(z.string()).nullable().optional(),
+    theme: z.record(z.string()).nullable().optional(),
+    socialLinks: z.record(z.string()).nullable().optional(),
+  });
+
+  app.get("/api/profile", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const profile = await storage.getUserProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      res.json({ profile });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch profile" });
+    }
+  });
+
+  app.post("/api/profile", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const existing = await storage.getUserProfile(userId);
+      if (existing) {
+        return res.status(409).json({ error: "Profile already exists" });
+      }
+      const validated = profileUpdateSchema.parse(req.body);
+      const profile = await storage.createUserProfile({ userId, ...validated });
+      res.json({ profile });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create profile" });
+    }
+  });
+
+  app.patch("/api/profile", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const validated = profileUpdateSchema.parse(req.body);
+      let profile = await storage.getUserProfile(userId);
+      if (!profile) {
+        profile = await storage.createUserProfile({ userId, ...validated });
+      } else {
+        profile = await storage.updateUserProfile(userId, validated);
+      }
+      res.json({ profile });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to update profile" });
+    }
+  });
+
   return httpServer;
 }

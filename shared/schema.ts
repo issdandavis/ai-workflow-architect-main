@@ -509,3 +509,29 @@ export const insertStorageFileSchema = createInsertSchema(storageFiles).omit({
 
 export type InsertStorageFile = z.infer<typeof insertStorageFileSchema>;
 export type StorageFile = typeof storageFiles.$inferSelect;
+
+// ===== USER PROFILES =====
+// MySpace-style personal profile pages
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  displayName: text("display_name"),
+  bio: text("bio"),
+  avatarUrl: text("avatar_url"),
+  backgroundUrl: text("background_url"),
+  youtubeVideos: text("youtube_videos").array(),
+  audioFiles: text("audio_files").array(),
+  theme: jsonb("theme"),
+  socialLinks: jsonb("social_links"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;

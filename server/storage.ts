@@ -19,6 +19,7 @@ import {
   agentAnalyses, type AgentAnalysis, type InsertAgentAnalysis,
   agentSuggestions, type AgentSuggestion, type InsertAgentSuggestion,
   agentProposals, type AgentProposal, type InsertAgentProposal,
+  userProfiles, type UserProfile, type InsertUserProfile,
 } from "@shared/schema";
 import { eq, and, desc, like, sql, gte, max } from "drizzle-orm";
 
@@ -130,6 +131,11 @@ export interface IStorage {
   getAgentProposal(id: number): Promise<AgentProposal | undefined>;
   getAgentProposalsByOrg(orgId: string, status?: string): Promise<AgentProposal[]>;
   updateAgentProposalStatus(id: number, status: string, approvedBy?: string): Promise<AgentProposal | undefined>;
+
+  // User Profiles
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  createUserProfile(data: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(userId: string, data: Partial<InsertUserProfile>): Promise<UserProfile | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -656,6 +662,26 @@ export class DbStorage implements IStorage {
       return allProposals.filter(p => p.status === status);
     }
     return allProposals;
+  }
+
+  // User Profiles
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+    return profile;
+  }
+
+  async createUserProfile(data: InsertUserProfile): Promise<UserProfile> {
+    const [profile] = await db.insert(userProfiles).values(data).returning();
+    return profile;
+  }
+
+  async updateUserProfile(userId: string, data: Partial<InsertUserProfile>): Promise<UserProfile | undefined> {
+    const [profile] = await db
+      .update(userProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, userId))
+      .returning();
+    return profile;
   }
 }
 

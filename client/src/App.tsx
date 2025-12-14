@@ -18,6 +18,7 @@ import Roundtable from "@/pages/Roundtable";
 import AgentDev from "@/pages/AgentDev";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import Profile from "@/pages/Profile";
 
 const PUBLIC_ROUTES = ["/", "/shop", "/login", "/signup"];
 
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/usage" component={Usage} />
       <Route path="/roundtable" component={Roundtable} />
       <Route path="/agent-dev" component={AgentDev} />
+      <Route path="/profile" component={Profile} />
       
       <Route component={NotFound} />
     </Switch>
