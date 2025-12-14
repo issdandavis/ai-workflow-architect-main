@@ -1166,5 +1166,116 @@ export async function registerRoutes(
     }
   });
 
+  // ===== GITHUB INTEGRATION ROUTES =====
+
+  app.get("/api/github/user", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { getAuthenticatedUser } = await import("./services/githubClient");
+      const user = await getAuthenticatedUser();
+      res.json({ user });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "GitHub not connected" });
+    }
+  });
+
+  app.get("/api/github/repos", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { listRepositories } = await import("./services/githubClient");
+      const repos = await listRepositories();
+      res.json({ repos: repos.map(r => ({ name: r.name, fullName: r.full_name, url: r.html_url, private: r.private })) });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "GitHub not connected" });
+    }
+  });
+
+  app.post("/api/github/repo", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { name, description, isPrivate } = z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().optional(),
+        isPrivate: z.boolean().optional(),
+      }).parse(req.body);
+
+      const { createRepository } = await import("./services/githubClient");
+      const repo = await createRepository(name, {
+        description,
+        private: isPrivate,
+        autoInit: true,
+      });
+
+      res.json({ 
+        success: true, 
+        repo: { 
+          name: repo.name, 
+          fullName: repo.full_name, 
+          url: repo.html_url,
+          cloneUrl: repo.clone_url,
+        } 
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create repository" });
+    }
+  });
+
+  app.post("/api/github/file", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { owner, repo, path, content, message, branch } = z.object({
+        owner: z.string(),
+        repo: z.string(),
+        path: z.string(),
+        content: z.string(),
+        message: z.string(),
+        branch: z.string().optional(),
+      }).parse(req.body);
+
+      const { createOrUpdateFile, getFileContent } = await import("./services/githubClient");
+      
+      // Check if file exists to get SHA for update
+      const existing = await getFileContent(owner, repo, path, branch);
+      const sha = existing && 'sha' in existing ? existing.sha : undefined;
+
+      const result = await createOrUpdateFile(owner, repo, path, content, message, branch || "main", sha);
+      res.json({ success: true, commit: result.commit });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create file" });
+    }
+  });
+
+  app.post("/api/github/branch", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { owner, repo, branchName, fromRef } = z.object({
+        owner: z.string(),
+        repo: z.string(),
+        branchName: z.string(),
+        fromRef: z.string().optional(),
+      }).parse(req.body);
+
+      const { createBranch } = await import("./services/githubClient");
+      const result = await createBranch(owner, repo, branchName, fromRef || "main");
+      res.json({ success: true, ref: result.ref });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create branch" });
+    }
+  });
+
+  app.post("/api/github/pull-request", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { owner, repo, title, body, head, base } = z.object({
+        owner: z.string(),
+        repo: z.string(),
+        title: z.string(),
+        body: z.string(),
+        head: z.string(),
+        base: z.string().optional(),
+      }).parse(req.body);
+
+      const { createPullRequest } = await import("./services/githubClient");
+      const pr = await createPullRequest(owner, repo, title, body, head, base || "main");
+      res.json({ success: true, pullRequest: { number: pr.number, url: pr.html_url, title: pr.title } });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create pull request" });
+    }
+  });
+
   return httpServer;
 }
