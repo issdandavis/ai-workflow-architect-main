@@ -32,6 +32,7 @@ import {
   type FileDiff,
   createUnifiedDiff 
 } from "@/components/diff/DiffViewer";
+import { CodeEditor } from "@/components/editor/CodeEditor";
 
 const agents = [
   { id: "orchestrator", name: "Orchestrator", role: "Project Manager", color: "text-primary", bg: "bg-primary/10" },
@@ -113,7 +114,7 @@ export default function CodingStudio() {
   const [messages, setMessages] = useState(initialConversation);
   const [inputValue, setInputValue] = useState("");
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>(initialPendingChanges);
-  const [activeTab, setActiveTab] = useState<"editor" | "diff">("editor");
+  const [activeTab, setActiveTab] = useState<"editor" | "diff" | "monaco">("editor");
   const [isProcessing, setIsProcessing] = useState(false);
   const [approvalHistory, setApprovalHistory] = useState<Array<{ changeId: string; action: string; timestamp: string }>>([]);
 
@@ -352,7 +353,7 @@ export default function CodingStudio() {
         </div>
 
         <div className="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden border-primary/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "editor" | "diff")} className="flex-1 flex flex-col">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "editor" | "diff" | "monaco")} className="flex-1 flex flex-col">
             <div className="h-12 border-b border-white/5 bg-black/20 flex items-center justify-between px-4">
               <TabsList className="bg-transparent">
                 <TabsTrigger 
@@ -361,7 +362,15 @@ export default function CodingStudio() {
                   data-testid="tab-editor"
                 >
                   <Code2 className="w-4 h-4 mr-2" />
-                  Editor
+                  Preview
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="monaco" 
+                  className="data-[state=active]:bg-white/10"
+                  data-testid="tab-monaco"
+                >
+                  <Code2 className="w-4 h-4 mr-2" />
+                  Code Editor
                 </TabsTrigger>
                 <TabsTrigger 
                   value="diff" 
@@ -468,6 +477,14 @@ export default function CodingStudio() {
                   )}
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="monaco" className="flex-1 m-0 overflow-hidden">
+              <CodeEditor
+                onSave={async (path, content) => {
+                  console.log("Saving:", path, content.length, "chars");
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="diff" className="flex-1 m-0 overflow-auto p-4 bg-black/20">
