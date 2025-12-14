@@ -5,6 +5,7 @@ import { hashPassword, verifyPassword, requireAuth, attachUser, validateApiKey }
 import { authLimiter, apiLimiter, agentLimiter } from "./middleware/rateLimiter";
 import { checkBudget } from "./middleware/costGovernor";
 import { orchestratorQueue } from "./services/orchestrator";
+import { processGuideAgentRequest } from "./services/guideAgent";
 import { createMcpRouter } from "./mcp";
 import { getZapierMcpClient, testZapierMcpConnection } from "./services/zapierMcpClient";
 import { z } from "zod";
@@ -63,20 +64,18 @@ export async function registerRoutes(
       const user = await storage.createUser({
         email,
         passwordHash,
-        role: role || "member",
+        role: role || "owner",
       });
 
-      // Create default org for owner
-      if (user.role === "owner") {
-        const org = await storage.createOrg({
-          name: `${email}'s Organization`,
-          ownerUserId: user.id,
-        });
-        req.session.orgId = org.id;
-      }
-
+      // Always create a default org for new users
+      const org = await storage.createOrg({
+        name: `${email}'s Organization`,
+        ownerUserId: user.id,
+      });
+      req.session.orgId = org.id;
       req.session.userId = user.id;
-      res.json({ id: user.id, email: user.email, role: user.role });
+      
+      res.json({ id: user.id, email: user.email, role: user.role, orgId: org.id });
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
     }
@@ -128,6 +127,43 @@ export async function registerRoutes(
       return res.status(404).json({ error: "User not found" });
     }
     res.json({ id: user.id, email: user.email, role: user.role });
+  });
+
+  // ===== ASSISTANT CHAT ROUTES =====
+
+  app.post("/api/assistant/chat", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { message, context } = z.object({
+        message: z.string().min(1).max(2000),
+        context: z.string().default("dashboard"),
+      }).parse(req.body);
+
+      const orgId = req.session.orgId;
+      const userId = req.session.userId;
+
+      if (!orgId || !userId) {
+        return res.status(400).json({ error: "No organization or user context" });
+      }
+
+      const result = await processGuideAgentRequest({
+        message,
+        context,
+        orgId,
+        userId,
+      });
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "assistant_chat",
+        target: context,
+        detailJson: { messageLength: message.length, actionsCount: result.actions?.length || 0 },
+      });
+
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
+    }
   });
 
   // ===== INTEGRATION VAULT ROUTES =====
