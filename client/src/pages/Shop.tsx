@@ -1,11 +1,14 @@
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Zap, Shield, Globe, Brain, CreditCard, Sparkles } from "lucide-react";
+import { Check, Zap, Shield, Globe, Brain, CreditCard, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { useState } from "react";
+import shopMusic from "@assets/Old_School_Flow_1765749666740.wav";
 
 interface StripeProduct {
   id: string;
@@ -24,6 +27,27 @@ interface StripePrice {
 
 export default function Shop() {
   const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = 0.3;
+      audio.loop = true;
+      audio.play().catch(() => {});
+    }
+    return () => {
+      if (audio) audio.pause();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !audioRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   const { data: productsData, isLoading: loadingProducts } = useQuery({
     queryKey: ['/api/stripe/products'],
@@ -110,6 +134,8 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <audio ref={audioRef} src={shopMusic} data-testid="audio-shop-music" />
+      
       <nav className="border-b border-border bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <Link href="/">
           <span className="text-xl font-bold cursor-pointer hover:text-primary transition-colors" data-testid="link-home">
@@ -117,6 +143,15 @@ export default function Shop() {
           </span>
         </Link>
         <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMute}
+            data-testid="button-toggle-music"
+            title={isMuted ? "Unmute music" : "Mute music"}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </Button>
           <Link href="/login">
             <Button variant="ghost" data-testid="button-login">Log In</Button>
           </Link>
