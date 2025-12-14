@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { User, Lock, Bell, CreditCard, Shield, Key } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Shield, Key, GitBranch } from "lucide-react";
 
 export default function Settings() {
   return (
@@ -25,6 +25,9 @@ export default function Settings() {
               <Key className="w-4 h-4" /> API Keys
             </Button>
             <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/5">
+              <GitBranch className="w-4 h-4" /> Auto-Deploy
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/5">
               <Bell className="w-4 h-4" /> Notifications
             </Button>
             <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/5">
@@ -37,6 +40,36 @@ export default function Settings() {
 
           {/* Main Settings Content */}
           <div className="lg:col-span-2 space-y-6">
+
+            {/* Auto-Deploy Configuration */}
+            <div className="glass-panel p-6 rounded-2xl space-y-6 border-l-4 border-l-primary/50">
+              <div className="flex items-center gap-2 mb-4">
+                <GitBranch className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">Auto Authenticator</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Configure automated code uploading. When enabled, the AI Swarm will automatically commit and push generated code to your connected repository.
+              </p>
+              
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Enable Auto-Push</Label>
+                    <div className="text-xs text-muted-foreground">Automatically push to 'main' branch</div>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>GitHub Personal Access Token (PAT)</Label>
+                  <div className="flex gap-2">
+                    <Input type="password" value="ghp_........................" className="bg-black/20 border-white/10" readOnly />
+                    <Button variant="outline">Update</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Required for automated commits.</p>
+                </div>
+              </div>
+            </div>
             
             {/* API Keys Section */}
             <div className="glass-panel p-6 rounded-2xl space-y-6">

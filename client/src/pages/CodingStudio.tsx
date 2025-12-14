@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
-  Bot, 
+  Bot,  
   Code2, 
   Play, 
   MessageSquare, 
@@ -166,6 +168,10 @@ export default function CodingStudio() {
               <span className="text-xs text-muted-foreground">Generated 2m ago</span>
             </div>
             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mr-4">
+                <Switch id="auto-deploy" />
+                <Label htmlFor="auto-deploy" className="text-xs text-muted-foreground cursor-pointer">Auto-Deploy</Label>
+              </div>
               <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Save className="w-4 h-4" /></Button>
               <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Share2 className="w-4 h-4" /></Button>
               <Separator orientation="vertical" className="h-4" />
