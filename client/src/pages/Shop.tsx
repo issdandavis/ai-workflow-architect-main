@@ -48,11 +48,12 @@ export default function Shop() {
   const products: StripeProduct[] = productsData?.products || [];
   const prices: StripePrice[] = pricesData?.prices || [];
 
-  const oneTimeProduct = products.find(p => p.metadata?.type === 'one_time');
-  const subscriptionProduct = products.find(p => p.metadata?.type === 'subscription');
+  const yearlyProduct = products.find(p => p.metadata?.type === 'yearly' || p.metadata?.type === 'one_time');
+  const monthlyProduct = products.find(p => p.metadata?.type === 'subscription');
   
-  const oneTimePrice = prices.find(p => p.product === oneTimeProduct?.id);
-  const subscriptionPrice = prices.find(p => p.product === subscriptionProduct?.id);
+  const yearlyPrice = prices.find(p => p.product === yearlyProduct?.id && p.recurring?.interval === 'year') || 
+                      prices.find(p => p.product === yearlyProduct?.id);
+  const monthlyPrice = prices.find(p => p.product === monthlyProduct?.id);
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ priceId, mode }: { priceId: string; mode: 'payment' | 'subscription' }) => {
@@ -136,7 +137,7 @@ export default function Shop() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-subheading">
-            Get lifetime access or subscribe monthly. No hidden fees.
+            Subscribe yearly or monthly. No hidden fees.
           </p>
         </motion.div>
 
@@ -151,18 +152,18 @@ export default function Shop() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="h-full border-2 hover:border-primary/50 transition-colors" data-testid="card-lifetime">
+              <Card className="h-full border-2 hover:border-primary/50 transition-colors" data-testid="card-yearly">
                 <CardHeader className="text-center pb-2">
                   <Badge variant="outline" className="w-fit mx-auto mb-2">Best Value</Badge>
-                  <CardTitle className="text-2xl" data-testid="text-lifetime-title">Lifetime Access</CardTitle>
-                  <CardDescription>One-time purchase, forever yours</CardDescription>
+                  <CardTitle className="text-2xl" data-testid="text-yearly-title">Yearly</CardTitle>
+                  <CardDescription>Save 55% compared to monthly</CardDescription>
                 </CardHeader>
                 <CardContent className="text-center pt-4">
                   <div className="mb-6">
-                    <span className="text-5xl font-bold" data-testid="text-lifetime-price">
-                      {oneTimePrice ? formatPrice(oneTimePrice.unit_amount) : '$49'}
+                    <span className="text-5xl font-bold" data-testid="text-yearly-price">
+                      {yearlyPrice ? formatPrice(yearlyPrice.unit_amount) : '$49'}
                     </span>
-                    <span className="text-muted-foreground ml-2">one-time</span>
+                    <span className="text-muted-foreground ml-2">/year</span>
                   </div>
                   <ul className="space-y-3 text-left">
                     {features.map((feature, i) => (
@@ -173,7 +174,7 @@ export default function Shop() {
                     ))}
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-sm font-medium">Lifetime updates included</span>
+                      <span className="text-sm font-medium">All updates for the year</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -181,14 +182,14 @@ export default function Shop() {
                   <Button 
                     className="w-full" 
                     size="lg"
-                    disabled={!oneTimePrice || checkoutMutation.isPending}
-                    onClick={() => oneTimePrice && checkoutMutation.mutate({ 
-                      priceId: oneTimePrice.id, 
-                      mode: 'payment' 
+                    disabled={!yearlyPrice || checkoutMutation.isPending}
+                    onClick={() => yearlyPrice && checkoutMutation.mutate({ 
+                      priceId: yearlyPrice.id, 
+                      mode: 'subscription' 
                     })}
-                    data-testid="button-buy-lifetime"
+                    data-testid="button-buy-yearly"
                   >
-                    {checkoutMutation.isPending ? 'Processing...' : 'Buy Now'}
+                    {checkoutMutation.isPending ? 'Processing...' : 'Subscribe Yearly'}
                   </Button>
                 </CardFooter>
               </Card>
@@ -211,7 +212,7 @@ export default function Shop() {
                 <CardContent className="text-center pt-4">
                   <div className="mb-6">
                     <span className="text-5xl font-bold" data-testid="text-monthly-price">
-                      {subscriptionPrice ? formatPrice(subscriptionPrice.unit_amount) : '$9'}
+                      {monthlyPrice ? formatPrice(monthlyPrice.unit_amount) : '$9'}
                     </span>
                     <span className="text-muted-foreground ml-2">/month</span>
                   </div>
@@ -233,9 +234,9 @@ export default function Shop() {
                     className="w-full" 
                     size="lg"
                     variant="default"
-                    disabled={!subscriptionPrice || checkoutMutation.isPending}
-                    onClick={() => subscriptionPrice && checkoutMutation.mutate({ 
-                      priceId: subscriptionPrice.id, 
+                    disabled={!monthlyPrice || checkoutMutation.isPending}
+                    onClick={() => monthlyPrice && checkoutMutation.mutate({ 
+                      priceId: monthlyPrice.id, 
                       mode: 'subscription' 
                     })}
                     data-testid="button-subscribe"
