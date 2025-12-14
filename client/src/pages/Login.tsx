@@ -38,7 +38,8 @@ export default function Login() {
         throw new Error(data.error || "Login failed");
       }
 
-      setLocation("/dashboard");
+      // Force full page navigation to ensure session is properly established
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

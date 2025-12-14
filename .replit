@@ -44,7 +44,7 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
-integrations = ["github:1.0.0"]
+integrations = ["github:1.0.0", "google-drive:1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-21db36d0-795f-4b22-9f33-a13e336c3575"

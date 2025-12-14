@@ -1278,6 +1278,80 @@ export async function registerRoutes(
     }
   });
 
+  // ===== GOOGLE DRIVE INTEGRATION ROUTES =====
+
+  app.get("/api/google-drive/status", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { isGoogleDriveConnected } = await import("./services/googleDriveClient");
+      const connected = await isGoogleDriveConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/google-drive/files", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { folderId, pageSize } = z.object({
+        folderId: z.string().optional(),
+        pageSize: z.coerce.number().optional().default(20),
+      }).parse(req.query);
+
+      const { listDriveFiles } = await import("./services/googleDriveClient");
+      const files = await listDriveFiles(folderId, pageSize);
+      res.json({ files });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to list files" });
+    }
+  });
+
+  app.get("/api/google-drive/file/:fileId", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { fileId } = req.params;
+      const { getDriveFile } = await import("./services/googleDriveClient");
+      const file = await getDriveFile(fileId);
+      res.json({ file });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to get file" });
+    }
+  });
+
+  app.get("/api/google-drive/quota", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { getDriveStorageQuota } = await import("./services/googleDriveClient");
+      const quota = await getDriveStorageQuota();
+      res.json({ quota });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to get quota" });
+    }
+  });
+
+  app.post("/api/google-drive/folder", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { name, parentFolderId } = z.object({
+        name: z.string().min(1),
+        parentFolderId: z.string().optional(),
+      }).parse(req.body);
+
+      const { createDriveFolder } = await import("./services/googleDriveClient");
+      const folder = await createDriveFolder(name, parentFolderId);
+      res.json({ folder });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create folder" });
+    }
+  });
+
+  app.delete("/api/google-drive/file/:fileId", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { fileId } = req.params;
+      const { deleteDriveFile } = await import("./services/googleDriveClient");
+      await deleteDriveFile(fileId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to delete file" });
+    }
+  });
+
   // ===== ROUNDTABLE ROUTES =====
 
   // Get available AI providers

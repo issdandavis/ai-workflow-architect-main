@@ -42,7 +42,8 @@ export default function Signup() {
         throw new Error(data.error || "Signup failed");
       }
 
-      setLocation("/dashboard");
+      // Force full page navigation to ensure session is properly established
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
