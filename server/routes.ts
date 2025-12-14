@@ -435,5 +435,81 @@ export async function registerRoutes(
     }
   });
 
+  // ===== ZAPIER INTEGRATION ROUTES =====
+
+  app.post("/api/zapier/trigger", async (req: Request, res: Response) => {
+    try {
+      const { projectId, goal, provider, model, zapierData } = z.object({
+        projectId: z.string(),
+        goal: z.string(),
+        provider: z.string().optional().default("gemini"),
+        model: z.string().optional(),
+        zapierData: z.any().optional(),
+      }).parse(req.body);
+
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      // Create agent run triggered by Zapier
+      const agentRun = await storage.createAgentRun({
+        projectId,
+        status: "queued",
+        model: model || "gemini-2.0-flash",
+        provider: provider || "gemini",
+        inputJson: { goal, zapierData, triggeredBy: "zapier" },
+        outputJson: null,
+        costEstimate: null,
+      });
+
+      orchestratorQueue.enqueue({
+        runId: agentRun.id,
+        projectId,
+        orgId: project.orgId,
+        goal,
+        mode: "zapier",
+      });
+
+      // Return run ID to Zapier
+      res.json({
+        success: true,
+        runId: agentRun.id,
+        projectId,
+        status: "queued",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
+    }
+  });
+
+  app.get("/api/zapier/status/:runId", async (req: Request, res: Response) => {
+    try {
+      const { runId } = req.params;
+      const agentRun = await storage.getAgentRun(runId);
+      
+      if (!agentRun) {
+        return res.status(404).json({ error: "Run not found" });
+      }
+
+      const messages = await storage.getMessagesByAgentRun(runId);
+
+      res.json({
+        runId: agentRun.id,
+        projectId: agentRun.projectId,
+        status: agentRun.status,
+        provider: agentRun.provider,
+        model: agentRun.model,
+        result: agentRun.outputJson,
+        costEstimate: agentRun.costEstimate,
+        messagesCount: messages.length,
+        createdAt: agentRun.createdAt,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch run status" });
+    }
+  });
+
   return httpServer;
 }
