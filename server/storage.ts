@@ -13,6 +13,7 @@ import {
   apiKeys, type ApiKey, type InsertApiKey,
   userCredentials, type UserCredential, type InsertUserCredential,
   usageRecords, type UsageRecord, type InsertUsageRecord,
+  decisionTraces, type DecisionTrace, type InsertDecisionTrace,
 } from "@shared/schema";
 import { eq, and, desc, like, sql, gte } from "drizzle-orm";
 
@@ -89,6 +90,10 @@ export interface IStorage {
   getUsageRecords(orgId: string, since?: Date): Promise<UsageRecord[]>;
   getUserUsageRecords(userId: string, since?: Date): Promise<UsageRecord[]>;
   getUsageSummary(orgId: string, since: Date): Promise<{ totalTokens: number; totalCostUsd: number }>;
+
+  // Decision Traces
+  createDecisionTrace(trace: InsertDecisionTrace): Promise<DecisionTrace>;
+  getDecisionTraces(agentRunId: string): Promise<DecisionTrace[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -432,6 +437,20 @@ export class DbStorage implements IStorage {
     const totalCostUsd = records.reduce((sum, r) => sum + parseFloat(r.estimatedCostUsd || "0"), 0);
     
     return { totalTokens, totalCostUsd };
+  }
+
+  // Decision Traces
+  async createDecisionTrace(trace: InsertDecisionTrace): Promise<DecisionTrace> {
+    const [created] = await db.insert(decisionTraces).values(trace).returning();
+    return created;
+  }
+
+  async getDecisionTraces(agentRunId: string): Promise<DecisionTrace[]> {
+    return db
+      .select()
+      .from(decisionTraces)
+      .where(eq(decisionTraces.agentRunId, agentRunId))
+      .orderBy(decisionTraces.stepNumber);
   }
 }
 

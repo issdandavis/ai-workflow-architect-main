@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import { storage } from "../storage";
 import { retryService } from "./retryService";
 import { trackCost } from "../middleware/costGovernor";
+import type { InsertDecisionTrace } from "@shared/schema";
 
 export interface AgentHandoff {
   summary: string;
@@ -20,11 +21,48 @@ export interface AgentTask {
   mode: string;
 }
 
+type StepType = InsertDecisionTrace["stepType"];
+
 class OrchestratorQueue extends EventEmitter {
   private queue: AgentTask[] = [];
   private processing = false;
   private concurrency = 2;
   private activeCount = 0;
+  private stepCounters: Map<string, number> = new Map();
+
+  private async traceDecision(
+    runId: string,
+    stepType: StepType,
+    decision: string,
+    reasoning: string,
+    options?: {
+      confidence?: number;
+      alternatives?: unknown[];
+      contextUsed?: unknown;
+      startTime?: number;
+    }
+  ): Promise<void> {
+    const stepNumber = (this.stepCounters.get(runId) || 0) + 1;
+    this.stepCounters.set(runId, stepNumber);
+
+    const durationMs = options?.startTime ? Date.now() - options.startTime : undefined;
+
+    try {
+      await storage.createDecisionTrace({
+        agentRunId: runId,
+        stepNumber,
+        stepType,
+        decision,
+        reasoning,
+        confidence: options?.confidence?.toString(),
+        alternatives: options?.alternatives,
+        contextUsed: options?.contextUsed,
+        durationMs,
+      });
+    } catch (error) {
+      console.error("Failed to log decision trace:", error);
+    }
+  }
 
   enqueue(task: AgentTask) {
     this.queue.push(task);
@@ -69,6 +107,9 @@ class OrchestratorQueue extends EventEmitter {
   }
 
   private async executeTask(task: AgentTask) {
+    const startTime = Date.now();
+    this.stepCounters.set(task.runId, 0);
+
     const run = await storage.getAgentRun(task.runId);
     if (!run) {
       throw new Error("Agent run not found");
@@ -78,6 +119,19 @@ class OrchestratorQueue extends EventEmitter {
       type: "info",
       message: `Starting agent run with ${run.provider} (${run.model})`,
     });
+
+    await this.traceDecision(
+      task.runId,
+      "provider_selection",
+      `Selected ${run.provider} with model ${run.model}`,
+      `User requested ${run.provider} as the primary provider. Model ${run.model} was chosen based on task requirements.`,
+      {
+        confidence: 0.95,
+        alternatives: ["openai", "anthropic", "perplexity", "xai"].filter(p => p !== run.provider),
+        contextUsed: { goal: task.goal, mode: task.mode },
+        startTime,
+      }
+    );
 
     await storage.updateAgentRun(task.runId, { status: "running" });
 
@@ -89,31 +143,62 @@ class OrchestratorQueue extends EventEmitter {
       content: task.goal,
     });
 
+    await this.traceDecision(
+      task.runId,
+      "context_analysis",
+      "Analyzed user goal and prepared request",
+      `Parsed user goal: "${task.goal.substring(0, 100)}${task.goal.length > 100 ? '...' : ''}". Prepared message for ${run.provider}.`,
+      { confidence: 0.9, contextUsed: { goalLength: task.goal.length, mode: task.mode } }
+    );
+
     this.emit("log", task.runId, {
       type: "info",
       message: `Calling ${run.provider} with model ${run.model} (with retry/fallback)...`,
     });
 
+    let retryStep = 0;
     const response = await retryService.callWithRetry(
       run.provider,
       task.goal,
       run.model,
-      (attempt, error, nextProvider) => {
+      async (attempt, error, nextProvider) => {
+        retryStep++;
         if (nextProvider) {
           this.emit("log", task.runId, {
             type: "warning",
             message: `Provider failed, falling back to ${nextProvider}. Error: ${error}`,
           });
+          await this.traceDecision(
+            task.runId,
+            "fallback",
+            `Switching from failed provider to ${nextProvider}`,
+            `${run.provider} failed with error: "${error}". Fallback chain triggered to try ${nextProvider} next.`,
+            { confidence: 0.85, alternatives: [], contextUsed: { attempt, error, originalProvider: run.provider } }
+          );
         } else {
           this.emit("log", task.runId, {
             type: "warning",
             message: `Retry attempt ${attempt}. Error: ${error}`,
           });
+          await this.traceDecision(
+            task.runId,
+            "retry",
+            `Retrying request (attempt ${attempt})`,
+            `Previous attempt failed with: "${error}". Applying exponential backoff before retry.`,
+            { confidence: 0.8, contextUsed: { attempt, error } }
+          );
         }
       }
     );
 
     if (!response.success) {
+      await this.traceDecision(
+        task.runId,
+        "error_handling",
+        "All providers failed, marking run as failed",
+        `Exhausted all retry attempts and fallback providers. Final error: ${response.error}`,
+        { confidence: 1.0, contextUsed: { attempts: response.attempts, error: response.error } }
+      );
       throw new Error(response.error || "Provider call failed");
     }
 
@@ -143,6 +228,22 @@ class OrchestratorQueue extends EventEmitter {
       },
       costEstimate,
     });
+
+    await this.traceDecision(
+      task.runId,
+      "response_generation",
+      `Generated response with ${response.usedProvider}`,
+      `Successfully received response from ${response.usedProvider}. Token usage: ${response.usage?.inputTokens || 0} input, ${response.usage?.outputTokens || 0} output. Cost: $${costEstimate}.`,
+      {
+        confidence: 0.95,
+        contextUsed: {
+          usedProvider: response.usedProvider,
+          attempts: response.attempts,
+          usage: response.usage,
+        },
+        startTime,
+      }
+    );
 
     // Track cost in budget
     if (parseFloat(costEstimate) > 0) {

@@ -455,6 +455,27 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/agents/run/:runId/traces", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { runId } = req.params;
+      const agentRun = await storage.getAgentRun(runId);
+      
+      if (!agentRun) {
+        return res.status(404).json({ error: "Agent run not found" });
+      }
+
+      const project = await storage.getProject(agentRun.projectId);
+      if (!project || project.orgId !== req.session.orgId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const traces = await storage.getDecisionTraces(runId);
+      res.json(traces);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch decision traces" });
+    }
+  });
+
   // ===== MEMORY ROUTES =====
 
   app.post("/api/memory/add", requireAuth, apiLimiter, async (req: Request, res: Response) => {

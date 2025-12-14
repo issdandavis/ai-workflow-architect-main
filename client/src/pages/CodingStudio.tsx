@@ -20,7 +20,8 @@ import {
   GitCompare,
   CheckCircle2,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Brain
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -33,6 +34,7 @@ import {
   createUnifiedDiff 
 } from "@/components/diff/DiffViewer";
 import { CodeEditor } from "@/components/editor/CodeEditor";
+import { DecisionTraceViewer } from "@/components/DecisionTraceViewer";
 
 const agents = [
   { id: "orchestrator", name: "Orchestrator", role: "Project Manager", color: "text-primary", bg: "bg-primary/10" },
@@ -114,9 +116,10 @@ export default function CodingStudio() {
   const [messages, setMessages] = useState(initialConversation);
   const [inputValue, setInputValue] = useState("");
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>(initialPendingChanges);
-  const [activeTab, setActiveTab] = useState<"editor" | "diff" | "monaco">("editor");
+  const [activeTab, setActiveTab] = useState<"editor" | "diff" | "monaco" | "traces">("editor");
   const [isProcessing, setIsProcessing] = useState(false);
   const [approvalHistory, setApprovalHistory] = useState<Array<{ changeId: string; action: string; timestamp: string }>>([]);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
   const pendingCount = pendingChanges.filter((c) => c.status === "pending").length;
 
@@ -385,6 +388,14 @@ export default function CodingStudio() {
                     </span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="traces" 
+                  className="data-[state=active]:bg-white/10"
+                  data-testid="tab-traces"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  Decision Trace
+                </TabsTrigger>
               </TabsList>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 mr-4">
@@ -522,6 +533,28 @@ export default function CodingStudio() {
                         </div>
                       ))}
                   </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="traces" className="flex-1 m-0 overflow-auto p-4 bg-black/20">
+              {currentRunId ? (
+                <DecisionTraceViewer runId={currentRunId} isOpen={true} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center" data-testid="traces-empty-state">
+                  <Brain className="w-12 h-12 text-gray-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-300 mb-2">No Agent Run Selected</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    Decision traces show the step-by-step reasoning behind AI agent decisions. 
+                    Run an agent task to see the trace of why it made each choice.
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Enter Run ID to view traces..."
+                    className="mt-4 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary w-64"
+                    onChange={(e) => setCurrentRunId(e.target.value || null)}
+                    data-testid="input-run-id"
+                  />
                 </div>
               )}
             </TabsContent>

@@ -247,3 +247,28 @@ export const insertUsageRecordSchema = createInsertSchema(usageRecords).omit({
 
 export type InsertUsageRecord = z.infer<typeof insertUsageRecordSchema>;
 export type UsageRecord = typeof usageRecords.$inferSelect;
+
+// Decision Traces - log every agent step with reasoning
+export const decisionTraces = pgTable("decision_traces", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  agentRunId: varchar("agent_run_id").notNull().references(() => agentRuns.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number").notNull(),
+  stepType: text("step_type", { 
+    enum: ["provider_selection", "retry", "fallback", "model_selection", "context_analysis", "tool_call", "response_generation", "error_handling"] 
+  }).notNull(),
+  decision: text("decision").notNull(),
+  reasoning: text("reasoning").notNull(),
+  confidence: decimal("confidence", { precision: 3, scale: 2 }),
+  alternatives: jsonb("alternatives"),
+  contextUsed: jsonb("context_used"),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertDecisionTraceSchema = createInsertSchema(decisionTraces).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDecisionTrace = z.infer<typeof insertDecisionTraceSchema>;
+export type DecisionTrace = typeof decisionTraces.$inferSelect;
