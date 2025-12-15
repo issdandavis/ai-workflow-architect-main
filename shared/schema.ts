@@ -344,7 +344,6 @@ export const agentAnalyses = pgTable("agent_analyses", {
 });
 
 export const insertAgentAnalysisSchema = createInsertSchema(agentAnalyses).omit({
-  id: true,
   createdAt: true,
 });
 
@@ -364,7 +363,6 @@ export const agentSuggestions = pgTable("agent_suggestions", {
 });
 
 export const insertAgentSuggestionSchema = createInsertSchema(agentSuggestions).omit({
-  id: true,
   createdAt: true,
 });
 
@@ -384,7 +382,6 @@ export const agentProposals = pgTable("agent_proposals", {
 });
 
 export const insertAgentProposalSchema = createInsertSchema(agentProposals).omit({
-  id: true,
   createdAt: true,
 });
 
