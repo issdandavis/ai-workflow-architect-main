@@ -14,6 +14,7 @@ import { dispatchEvent, generateSecretKey, getSampleData, SUPPORTED_EVENTS, type
 import { z } from "zod";
 import { insertUserSchema, insertOrgSchema, insertProjectSchema, insertIntegrationSchema, insertMemoryItemSchema, insertWorkspaceSchema } from "@shared/schema";
 import { getProviderAdapter } from "./services/providerAdapters";
+import { getAvailableProviders } from "./services/aiPriorityManager";
 import crypto from "crypto";
 
 const VERSION = "1.0.0";
@@ -50,6 +51,20 @@ export async function registerRoutes(
       time: new Date().toISOString(),
       version: VERSION,
     });
+  });
+
+  // ===== AI PROVIDERS ROUTE =====
+
+  app.get("/api/ai/providers", apiLimiter, (req: Request, res: Response) => {
+    try {
+      const providers = getAvailableProviders();
+      res.json({ 
+        providers,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get providers" });
+    }
   });
 
   // ===== AUTH ROUTES =====

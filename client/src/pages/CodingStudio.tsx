@@ -54,13 +54,23 @@ interface GenerateResponse {
   provider: string;
 }
 
-const PROVIDERS = [
-  { id: "google", name: "Gemini (Free)", model: "gemini-2.0-flash" },
-  { id: "huggingface", name: "HuggingFace Llama (Free)", model: "meta-llama/Meta-Llama-3-8B-Instruct" },
-  { id: "anthropic", name: "Claude (Your API Key)", model: "claude-sonnet-4-20250514" },
-  { id: "perplexity", name: "Perplexity (Your API Key)", model: "sonar" },
-  { id: "openai", name: "OpenAI (Your API Key)", model: "gpt-4o" },
-  { id: "xai", name: "xAI Grok (Your API Key)", model: "grok-2" },
+type CostTier = "free" | "your_key";
+
+interface Provider {
+  id: string;
+  name: string;
+  model: string;
+  costTier: CostTier;
+  badge: string;
+  badgeColor: string;
+}
+
+const PROVIDERS: Provider[] = [
+  { id: "huggingface", name: "HuggingFace Llama", model: "meta-llama/Meta-Llama-3-8B-Instruct", costTier: "free", badge: "🆓 FREE", badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  { id: "google", name: "Google Gemini", model: "gemini-2.0-flash", costTier: "free", badge: "🆓 FREE", badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  { id: "anthropic", name: "Claude", model: "claude-sonnet-4-20250514", costTier: "your_key", badge: "🔑 Your Key", badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  { id: "xai", name: "xAI Grok", model: "grok-2", costTier: "your_key", badge: "🔑 Your Key", badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  { id: "perplexity", name: "Perplexity", model: "sonar", costTier: "your_key", badge: "🔑 Your Key", badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
 ];
 
 const YOUTUBE_URL_STORAGE_KEY = "codingStudio_youtubeUrl";
@@ -101,7 +111,7 @@ function extractYouTubeVideoId(url: string): string | null {
 export default function CodingStudio() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [provider, setProvider] = useState("google");
+  const [provider, setProvider] = useState("huggingface");
   const [editorContent, setEditorContent] = useState("// Generated code will appear here\n// Select a provider and enter a prompt to get started\n");
   const [copied, setCopied] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -250,24 +260,40 @@ export default function CodingStudio() {
   const currentVideoId = extractYouTubeVideoId(youtubeUrl);
 
   const ChatPanel = (
-    <div className="w-full h-full flex flex-col gap-4">
-      <div className="glass-panel p-4 rounded-xl flex items-center justify-between">
-        <div>
+    <motion.div 
+      className="w-full h-full flex flex-col gap-4"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      <div className="relative overflow-hidden glass-panel p-4 rounded-xl flex items-center justify-between backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 pointer-events-none" />
+        <div className="relative z-10">
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            >
+              <Sparkles className="w-5 h-5 text-primary" />
+            </motion.div>
             AI Coding Assistant
           </h2>
           <p className="text-xs text-muted-foreground">Generate code with multiple AI providers</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={provider} onValueChange={setProvider} data-testid="select-provider">
-            <SelectTrigger className="w-[160px]" data-testid="select-provider-trigger">
+            <SelectTrigger className="w-[200px]" data-testid="select-provider-trigger">
               <SelectValue placeholder="Select provider" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="min-w-[280px]">
               {PROVIDERS.map(p => (
-                <SelectItem key={p.id} value={p.id} data-testid={`select-provider-${p.id}`}>
-                  {p.name}
+                <SelectItem key={p.id} value={p.id} data-testid={`select-provider-${p.id}`} className="flex items-center">
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <span>{p.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${p.badgeColor} font-medium`}>
+                      {p.badge}
+                    </span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -284,8 +310,9 @@ export default function CodingStudio() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 glass-panel rounded-xl p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 relative overflow-hidden glass-panel rounded-xl p-4 backdrop-blur-xl bg-gradient-to-br from-white/5 via-transparent to-white/5 border border-white/10 shadow-xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/2 to-transparent pointer-events-none" />
+        <div className="space-y-4 relative z-10">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground" data-testid="chat-empty-state">
               <Bot className="w-12 h-12 mb-4 opacity-50" />
@@ -350,7 +377,12 @@ export default function CodingStudio() {
         </div>
       </ScrollArea>
 
-      <div className="glass-panel p-3 rounded-xl">
+      <motion.div 
+        className="relative overflow-hidden glass-panel p-3 rounded-xl backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-xl"
+        whileHover={{ scale: 1.005 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-purple-500/5 pointer-events-none" />
         <Textarea
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -361,34 +393,41 @@ export default function CodingStudio() {
             }
           }}
           placeholder="Describe the code you want to generate..."
-          className="min-h-[80px] bg-transparent border-none resize-none focus-visible:ring-0"
+          className="min-h-[80px] bg-transparent border-none resize-none focus-visible:ring-0 relative z-10"
           data-testid="input-prompt"
         />
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2 relative z-10">
           <span className="text-xs text-muted-foreground">
             Press Enter to send, Shift+Enter for new line
           </span>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!inputValue.trim() || generateMutation.isPending}
-            className="gap-2"
-            data-testid="button-submit"
-          >
-            {generateMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            Generate
-          </Button>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button 
+              onClick={handleSubmit}
+              disabled={!inputValue.trim() || generateMutation.isPending}
+              className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25"
+              data-testid="button-submit"
+            >
+              {generateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Generate
+            </Button>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 
   const EditorPanel = (
-    <div className="h-full flex flex-col glass-panel rounded-xl overflow-hidden border-primary/20">
-      <div className="h-12 border-b border-white/5 bg-black/20 flex items-center justify-between px-4">
+    <motion.div 
+      className="h-full flex flex-col glass-panel rounded-xl overflow-hidden border-primary/20 backdrop-blur-xl bg-gradient-to-br from-white/5 via-transparent to-white/5 border border-white/10 shadow-2xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+    >
+      <div className="h-12 border-b border-white/5 bg-gradient-to-r from-black/30 via-black/20 to-black/30 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Code2 className="w-4 h-4 text-primary" />
           <span className="font-semibold text-sm">Generated Code</span>
@@ -452,7 +491,7 @@ export default function CodingStudio() {
           }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 
   const YoutubePanel = (
