@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Key, Trash2, Plus, Loader2, CheckCircle, AlertCircle, BarChart3, Download, AlertTriangle } from "lucide-react";
+import { User, Key, Trash2, Plus, Loader2, CheckCircle, AlertCircle, BarChart3, Download, AlertTriangle, Shield, Smartphone, QrCode } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -414,6 +414,106 @@ export default function Settings() {
                       </>
                     )}
                   </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Section */}
+            <div className="glass-panel p-6 rounded-2xl space-y-6" data-testid="section-security">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">Security</h2>
+              </div>
+
+              <Separator />
+
+              {/* Recovery Codes Card */}
+              <div 
+                className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4"
+                data-testid="card-security-recovery-codes"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Key className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Recovery Codes</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        One-time use codes for account recovery if you lose access to your 2FA device.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="text-sm text-muted-foreground" data-testid="text-recovery-codes-count">
+                    <span className="text-foreground font-medium">0</span> recovery codes remaining
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    data-testid="button-generate-recovery-codes"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Generate Codes
+                  </Button>
+                </div>
+              </div>
+
+              {/* Two-Factor Authentication Card */}
+              <div 
+                className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4"
+                data-testid="card-security-2fa"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Two-Factor Authentication</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Add an extra layer of security with time-based one-time passwords (TOTP).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-2" data-testid="text-2fa-status">
+                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <span className="text-sm text-muted-foreground">Not enabled</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    data-testid="button-enable-2fa"
+                  >
+                    Enable 2FA
+                  </Button>
+                </div>
+              </div>
+
+              {/* QR Code Sign-In Card */}
+              <div 
+                className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4"
+                data-testid="card-security-qr-signin"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <QrCode className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">QR Code Sign-In</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Sign in securely on other devices by scanning a QR code with your authenticated mobile device.
+                      This feature provides passwordless authentication for trusted devices.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-300">
+                    QR sign-in sessions expire after 5 minutes for security. You'll need 2FA enabled to use this feature.
+                  </p>
                 </div>
               </div>
             </div>

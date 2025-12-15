@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, jsonb, decimal, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -580,3 +580,59 @@ export const insertWorkflowRunSchema = createInsertSchema(workflowRuns).omit({
 
 export type InsertWorkflowRun = z.infer<typeof insertWorkflowRunSchema>;
 export type WorkflowRun = typeof workflowRuns.$inferSelect;
+
+// ===== SECURITY: RECOVERY CODES =====
+// One-time use recovery codes for account access
+export const recoveryCodes = pgTable("recovery_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  codeHash: varchar("code_hash", { length: 64 }).notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRecoveryCodeSchema = createInsertSchema(recoveryCodes).omit({
+  id: true,
+  usedAt: true,
+  createdAt: true,
+});
+
+export type InsertRecoveryCode = z.infer<typeof insertRecoveryCodeSchema>;
+export type RecoveryCode = typeof recoveryCodes.$inferSelect;
+
+// ===== SECURITY: TOTP SECRETS FOR 2FA =====
+// Time-based One-Time Password secrets for two-factor authentication
+export const totpSecrets = pgTable("totp_secrets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  encryptedSecret: varchar("encrypted_secret", { length: 256 }).notNull(),
+  verified: boolean("verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTotpSecretSchema = createInsertSchema(totpSecrets).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTotpSecret = z.infer<typeof insertTotpSecretSchema>;
+export type TotpSecret = typeof totpSecrets.$inferSelect;
+
+// ===== SECURITY: QR LOGIN SESSIONS =====
+// QR code-based login sessions for mobile/secondary device authentication
+export const qrLoginSessions = pgTable("qr_login_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  userId: varchar("user_id").references(() => users.id),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, approved, expired
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertQrLoginSessionSchema = createInsertSchema(qrLoginSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertQrLoginSession = z.infer<typeof insertQrLoginSessionSchema>;
+export type QrLoginSession = typeof qrLoginSessions.$inferSelect;

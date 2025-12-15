@@ -101,6 +101,39 @@ const AI_PROVIDERS = [
   },
 ];
 
+const MARKETPLACE_LINKS = [
+  { 
+    name: "Jam.dev", 
+    description: "1-click bug reporting with auto-captured logs and screen recordings",
+    url: "https://jam.dev",
+    category: "Bug Reporting"
+  },
+  { 
+    name: "Proton Mail", 
+    description: "Secure, encrypted email with 2FA and QR code sign-in",
+    url: "https://proton.me/mail",
+    category: "Secure Email"
+  },
+  { 
+    name: "Zapier", 
+    description: "Automate workflows across 5,000+ apps",
+    url: "https://zapier.com",
+    category: "Automation"
+  },
+  { 
+    name: "Linear", 
+    description: "Issue tracking for modern software teams",
+    url: "https://linear.app",
+    category: "Project Management"
+  },
+  { 
+    name: "Figma", 
+    description: "Collaborative design tool for teams",
+    url: "https://figma.com",
+    category: "Design"
+  },
+];
+
 const OTHER_SERVICES = [
   { 
     name: "GitHub", 
@@ -384,6 +417,50 @@ export default function Integrations() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Integration Marketplace Section */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" />
+            Integration Marketplace
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {MARKETPLACE_LINKS.map((link) => (
+              <a
+                key={link.name}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="glass-panel p-6 rounded-2xl border-white/5 hover:border-primary/30 transition-all group relative overflow-hidden cursor-pointer"
+                data-testid={`marketplace-card-${link.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-white/5 text-primary">
+                    <ExternalLink className="w-6 h-6" />
+                  </div>
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                    {link.category}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    {link.name}
+                    <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {link.description}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{link.category}</span>
+                  <span className="text-xs text-primary group-hover:underline">Visit Site →</span>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
 
