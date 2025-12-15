@@ -653,15 +653,18 @@ export class DbStorage implements IStorage {
   }
 
   async getAgentProposalsByOrg(orgId: string, status?: string): Promise<AgentProposal[]> {
-    const allProposals = await db
+    if (status) {
+      return db
+        .select()
+        .from(agentProposals)
+        .where(and(eq(agentProposals.orgId, orgId), eq(agentProposals.status, status as any)))
+        .orderBy(desc(agentProposals.createdAt));
+    }
+    return db
       .select()
       .from(agentProposals)
+      .where(eq(agentProposals.orgId, orgId))
       .orderBy(desc(agentProposals.createdAt));
-    
-    if (status) {
-      return allProposals.filter(p => p.status === status);
-    }
-    return allProposals;
   }
 
   // User Profiles

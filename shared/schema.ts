@@ -372,6 +372,7 @@ export type AgentSuggestion = typeof agentSuggestions.$inferSelect;
 // Agent Proposals - Store change proposals
 export const agentProposals = pgTable("agent_proposals", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  orgId: varchar("org_id").notNull().references(() => orgs.id, { onDelete: "cascade" }),
   suggestionId: integer("suggestion_id").references(() => agentSuggestions.id, { onDelete: "set null" }),
   filePath: text("file_path").notNull(),
   originalContent: text("original_content").notNull(),

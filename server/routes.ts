@@ -2052,6 +2052,199 @@ export async function registerRoutes(
     }
   });
 
+  // ===== CODE IMPROVEMENT ROUTES =====
+
+  // Analyze code and get improvement suggestions
+  app.post("/api/code-improvement/analyze", requireAuth, agentLimiter, async (req: Request, res: Response) => {
+    try {
+      const { filePath, content, provider, improvementType } = z.object({
+        filePath: z.string().min(1),
+        content: z.string().min(1),
+        provider: z.enum(["openai", "anthropic", "xai", "perplexity", "google"]).optional(),
+        improvementType: z.enum(["refactor", "optimize", "security", "documentation", "all"]).optional(),
+      }).parse(req.body);
+
+      const orgId = req.session.orgId;
+      const userId = req.session.userId;
+      if (!orgId || !userId) {
+        return res.status(400).json({ error: "No organization or user context" });
+      }
+
+      const { analyzeCode } = await import("./services/codeImprovement");
+      const { analysis, result } = await analyzeCode({
+        orgId,
+        userId,
+        filePath,
+        content,
+        provider,
+        improvementType,
+      });
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "code_analysis",
+        target: filePath,
+        detailJson: { analysisId: analysis.id, suggestionsCount: result.suggestions.length },
+      });
+
+      res.json({ analysis, result });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Analysis failed" });
+    }
+  });
+
+  // Generate improvement proposal from a suggestion
+  app.post("/api/code-improvement/generate", requireAuth, agentLimiter, async (req: Request, res: Response) => {
+    try {
+      const { analysisId, suggestionIndex, provider } = z.object({
+        analysisId: z.number(),
+        suggestionIndex: z.number(),
+        provider: z.enum(["openai", "anthropic", "xai", "perplexity", "google"]).optional(),
+      }).parse(req.body);
+
+      const userId = req.session.userId;
+      const orgId = req.session.orgId;
+      if (!userId || !orgId) {
+        return res.status(401).json({ error: "Not authenticated or no organization context" });
+      }
+
+      const { generateImprovement } = await import("./services/codeImprovement");
+      const { suggestion, proposal } = await generateImprovement(userId, orgId, analysisId, suggestionIndex, provider);
+
+      res.json({ suggestion, proposal });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Generation failed" });
+    }
+  });
+
+  // Get proposals for the org
+  app.get("/api/code-improvement/proposals", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization context" });
+      }
+
+      const { status } = z.object({
+        status: z.enum(["pending", "approved", "rejected", "applied"]).optional(),
+      }).parse(req.query);
+
+      const proposals = await storage.getAgentProposalsByOrg(orgId, status);
+      res.json(proposals);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch proposals" });
+    }
+  });
+
+  // Get single proposal with details
+  app.get("/api/code-improvement/proposals/:id", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orgId = req.session.orgId;
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid proposal ID" });
+      }
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization context" });
+      }
+
+      const proposal = await storage.getAgentProposal(id);
+      if (!proposal) {
+        return res.status(404).json({ error: "Proposal not found" });
+      }
+
+      if (proposal.orgId !== orgId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      res.json(proposal);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch proposal" });
+    }
+  });
+
+  // Approve a proposal
+  app.post("/api/code-improvement/proposals/:id/approve", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+      const orgId = req.session.orgId;
+      if (!userId || !orgId) {
+        return res.status(401).json({ error: "Not authenticated or no organization context" });
+      }
+
+      const { approveProposal } = await import("./services/codeImprovement");
+      const proposal = await approveProposal(id, orgId, userId);
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "proposal_approved",
+        target: proposal.filePath,
+        detailJson: { proposalId: id },
+      });
+
+      res.json(proposal);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Approval failed" });
+    }
+  });
+
+  // Reject a proposal
+  app.post("/api/code-improvement/proposals/:id/reject", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+      const orgId = req.session.orgId;
+      if (!userId || !orgId) {
+        return res.status(401).json({ error: "Not authenticated or no organization context" });
+      }
+
+      const { rejectProposal } = await import("./services/codeImprovement");
+      const proposal = await rejectProposal(id, orgId, userId);
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "proposal_rejected",
+        target: proposal.filePath,
+        detailJson: { proposalId: id },
+      });
+
+      res.json(proposal);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Rejection failed" });
+    }
+  });
+
+  // Apply an approved proposal
+  app.post("/api/code-improvement/proposals/:id/apply", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+      const orgId = req.session.orgId;
+      if (!userId || !orgId) {
+        return res.status(401).json({ error: "Not authenticated or no organization context" });
+      }
+
+      const { applyProposal } = await import("./services/codeImprovement");
+      const proposal = await applyProposal(id, orgId);
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "proposal_applied",
+        target: proposal.filePath,
+        detailJson: { proposalId: id },
+      });
+
+      res.json(proposal);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Apply failed" });
+    }
+  });
+
   // ===== CODE ASSISTANT ROUTES =====
 
   app.post("/api/code-assistant/generate", requireAuth, apiLimiter, async (req: Request, res: Response) => {
