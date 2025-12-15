@@ -226,24 +226,51 @@ export class DbStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const email = userData.email || `oauth_${userData.id}@placeholder.local`;
+    
+    // First check if user exists by email (handles case where email already registered)
+    const existingByEmail = await this.getUserByEmail(email);
+    if (existingByEmail) {
+      // Update existing user by email
+      const [updated] = await db
+        .update(users)
+        .set({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+        })
+        .where(eq(users.email, email))
+        .returning();
+      return updated;
+    }
+    
+    // Check if user exists by ID
+    const existingById = await this.getUser(userData.id);
+    if (existingById) {
+      // Update existing user by ID
+      const [updated] = await db
+        .update(users)
+        .set({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+        })
+        .where(eq(users.id, userData.id))
+        .returning();
+      return updated;
+    }
+    
+    // Create new user
     const [user] = await db
       .insert(users)
       .values({
         id: userData.id,
-        email: userData.email || `oauth_${userData.id}@placeholder.local`,
+        email: email,
         passwordHash: "",
         role: "owner",
         firstName: userData.firstName,
         lastName: userData.lastName,
         profileImageUrl: userData.profileImageUrl,
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-        },
       })
       .returning();
     return user;
