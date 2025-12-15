@@ -37,6 +37,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(userData: UpsertUser): Promise<User>;
+  updateUserLoginAttempts(userId: string, failedAttempts: number, lockedUntil: Date | null): Promise<void>;
   
   // Orgs
   getOrg(id: string): Promise<Org | undefined>;
@@ -274,6 +275,13 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async updateUserLoginAttempts(userId: string, failedAttempts: number, lockedUntil: Date | null): Promise<void> {
+    await db
+      .update(users)
+      .set({ failedAttempts, lockedUntil })
+      .where(eq(users.id, userId));
   }
 
   // Orgs

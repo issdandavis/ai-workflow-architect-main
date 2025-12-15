@@ -173,9 +173,33 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      // Check if account is locked
+      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+        const remainingMins = Math.ceil((new Date(user.lockedUntil).getTime() - Date.now()) / 60000);
+        return res.status(423).json({ 
+          error: `Account locked. Try again in ${remainingMins} minute${remainingMins > 1 ? 's' : ''}.` 
+        });
+      }
+
       const valid = await verifyPassword(password, user.passwordHash);
       if (!valid) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        const newAttempts = (user.failedAttempts || 0) + 1;
+        const maxAttempts = 10;
+        
+        if (newAttempts >= maxAttempts) {
+          // Lock account for 15 minutes
+          await storage.updateUserLoginAttempts(user.id, newAttempts, new Date(Date.now() + 15 * 60 * 1000));
+          return res.status(423).json({ error: "Too many failed attempts. Account locked for 15 minutes." });
+        }
+        
+        await storage.updateUserLoginAttempts(user.id, newAttempts, null);
+        const remaining = maxAttempts - newAttempts;
+        return res.status(401).json({ error: `Invalid credentials. ${remaining} attempts remaining.` });
+      }
+
+      // Reset failed attempts on successful login
+      if (user.failedAttempts > 0) {
+        await storage.updateUserLoginAttempts(user.id, 0, null);
       }
 
       req.session.userId = user.id;
