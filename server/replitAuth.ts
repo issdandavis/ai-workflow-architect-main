@@ -101,6 +101,11 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // If already authenticated, redirect to dashboard instead of re-prompting login
+    if (req.isAuthenticated()) {
+      return res.redirect("/dashboard");
+    }
+    
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
