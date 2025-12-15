@@ -2251,6 +2251,28 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/world-anvil/world/:worldId/timelines", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { worldId } = req.params;
+      const { listWorldTimelines } = await import("./services/worldAnvilClient");
+      const timelines = await listWorldTimelines(worldId);
+      res.json({ timelines });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to list timelines" });
+    }
+  });
+
+  app.get("/api/world-anvil/timeline/:timelineId", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { timelineId } = req.params;
+      const { getTimeline } = await import("./services/worldAnvilClient");
+      const timeline = await getTimeline(timelineId);
+      res.json({ timeline });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to get timeline" });
+    }
+  });
+
   app.get("/api/world-anvil/world/:worldId/search", requireAuth, apiLimiter, async (req: Request, res: Response) => {
     try {
       const { worldId } = req.params;
