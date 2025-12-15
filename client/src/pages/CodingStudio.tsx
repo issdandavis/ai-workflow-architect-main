@@ -397,7 +397,7 @@ export default function CodingStudio() {
         </div>
         <div className="flex items-center gap-2">
           <Select value={provider} onValueChange={setProvider} data-testid="select-provider">
-            <SelectTrigger className="w-[200px]" data-testid="select-provider-trigger">
+            <SelectTrigger className="w-[200px] min-h-11" data-testid="select-provider-trigger">
               <SelectValue placeholder="Select provider" />
             </SelectTrigger>
             <SelectContent className="min-w-[280px]">
@@ -417,7 +417,7 @@ export default function CodingStudio() {
             size="sm"
             variant="ghost"
             onClick={handleClearChat}
-            className="h-9 w-9 p-0"
+            className="h-11 w-11 p-0"
             data-testid="button-clear-chat"
           >
             <Trash2 className="w-4 h-4" />
@@ -508,7 +508,7 @@ export default function CodingStudio() {
             }
           }}
           placeholder="Describe the code you want to generate..."
-          className="min-h-[80px] bg-transparent border-none resize-none focus-visible:ring-0 relative z-10"
+          className="min-h-[100px] bg-transparent border-none resize-none focus-visible:ring-0 relative z-10 text-base"
           data-testid="input-prompt"
         />
         <div className="flex items-center justify-between mt-2 relative z-10">
@@ -519,7 +519,7 @@ export default function CodingStudio() {
             <Button 
               onClick={handleSubmit}
               disabled={!inputValue.trim() || generateMutation.isPending}
-              className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25"
+              className="gap-2 min-h-11 px-6 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25"
               data-testid="button-submit"
             >
               {generateMutation.isPending ? (
@@ -557,7 +557,7 @@ export default function CodingStudio() {
             size="sm"
             variant="ghost"
             onClick={handleCopyCode}
-            className="gap-2 h-8"
+            className="gap-2 h-11 min-w-11"
             data-testid="button-copy-code"
           >
             {copied ? (
@@ -581,7 +581,7 @@ export default function CodingStudio() {
                   setIsFigmaPanelOpen(!isFigmaPanelOpen);
                   if (!isFigmaPanelOpen) setIsYoutubePanelOpen(false);
                 }}
-                className={`gap-2 h-8 ${isFigmaPanelOpen ? "bg-purple-500/20" : ""}`}
+                className={`gap-2 h-11 min-w-11 ${isFigmaPanelOpen ? "bg-purple-500/20" : ""}`}
                 data-testid="button-toggle-figma"
               >
                 <Palette className="w-4 h-4 text-purple-500" />
@@ -594,7 +594,7 @@ export default function CodingStudio() {
                   setIsYoutubePanelOpen(!isYoutubePanelOpen);
                   if (!isYoutubePanelOpen) setIsFigmaPanelOpen(false);
                 }}
-                className={`gap-2 h-8 ${isYoutubePanelOpen ? "bg-red-500/20" : ""}`}
+                className={`gap-2 h-11 min-w-11 ${isYoutubePanelOpen ? "bg-red-500/20" : ""}`}
                 data-testid="button-toggle-youtube"
               >
                 <Youtube className="w-4 h-4 text-red-500" />
@@ -639,7 +639,7 @@ export default function CodingStudio() {
             size="sm"
             variant="ghost"
             onClick={() => setIsYoutubePanelOpen(false)}
-            className="h-8 w-8 p-0"
+            className="h-11 w-11 p-0"
             data-testid="button-close-youtube-mobile"
           >
             <X className="w-4 h-4" />
@@ -653,7 +653,7 @@ export default function CodingStudio() {
             value={youtubeInputValue}
             onChange={(e) => setYoutubeInputValue(e.target.value)}
             placeholder="Paste YouTube URL..."
-            className="flex-1"
+            className="flex-1 min-h-11"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleLoadYoutubeVideo();
@@ -664,7 +664,7 @@ export default function CodingStudio() {
           <Button
             size="sm"
             onClick={handleLoadYoutubeVideo}
-            className="px-3"
+            className="px-4 min-h-11"
             data-testid="button-load-youtube"
           >
             Load
@@ -674,7 +674,7 @@ export default function CodingStudio() {
               size="sm"
               variant="ghost"
               onClick={handleClearYoutubeVideo}
-              className="px-2"
+              className="h-11 w-11 p-0"
               data-testid="button-clear-youtube"
             >
               <X className="w-4 h-4" />
@@ -729,7 +729,7 @@ export default function CodingStudio() {
               size="sm"
               variant="ghost"
               onClick={() => setIsFigmaPanelOpen(false)}
-              className="h-8 w-8 p-0"
+              className="h-11 w-11 p-0"
               data-testid="button-close-figma-mobile"
             >
               <X className="w-4 h-4" />
@@ -744,7 +744,7 @@ export default function CodingStudio() {
             value={figmaInputValue}
             onChange={(e) => setFigmaInputValue(e.target.value)}
             placeholder="Paste Figma URL (e.g., https://figma.com/design/...)..."
-            className="flex-1 bg-black/20 border-purple-500/20 focus:border-purple-500/50"
+            className="flex-1 min-h-11 bg-black/20 border-purple-500/20 focus:border-purple-500/50"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleLoadFigmaDesign();
@@ -756,7 +756,7 @@ export default function CodingStudio() {
             size="sm"
             onClick={handleLoadFigmaDesign}
             disabled={figmaMutation.isPending}
-            className="px-3 bg-purple-600 hover:bg-purple-700"
+            className="px-4 min-h-11 bg-purple-600 hover:bg-purple-700"
             data-testid="button-load-figma"
           >
             {figmaMutation.isPending ? (
@@ -770,7 +770,7 @@ export default function CodingStudio() {
               size="sm"
               variant="ghost"
               onClick={handleClearFigmaDesign}
-              className="px-2"
+              className="h-11 w-11 p-0"
               data-testid="button-clear-figma"
             >
               <X className="w-4 h-4" />
