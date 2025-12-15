@@ -110,6 +110,22 @@ export async function processAITurn(
     currentTurn: session.currentTurn + 1,
   });
 
+  // Track usage for cost analytics
+  try {
+    await storage.createUsageRecord({
+      orgId: session.orgId,
+      userId,
+      provider,
+      model: config.model,
+      inputTokens: response.usage?.inputTokens || 0,
+      outputTokens: response.usage?.outputTokens || 0,
+      estimatedCostUsd: response.usage?.costEstimate || "0",
+      metadata: { requestType: "roundtable", sessionId },
+    });
+  } catch (err) {
+    console.error(`[Roundtable] Failed to record usage:`, err);
+  }
+
   console.log(`[Roundtable] ${config.name} responded in ${responseTime}ms (${response.usage?.inputTokens || 0} + ${response.usage?.outputTokens || 0} tokens)`);
 
   return message;

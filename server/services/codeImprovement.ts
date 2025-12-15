@@ -135,6 +135,22 @@ export async function analyzeCode(options: CodeImprovementOptions): Promise<{
     analysisResult,
   });
 
+  // Track usage for cost analytics
+  try {
+    await storage.createUsageRecord({
+      orgId,
+      userId,
+      provider,
+      model: model || defaultModel,
+      inputTokens: response.usage?.inputTokens || 0,
+      outputTokens: response.usage?.outputTokens || 0,
+      estimatedCostUsd: response.usage?.costEstimate || "0",
+      metadata: { requestType: "code_analysis", filePath },
+    });
+  } catch (err) {
+    console.error(`[CodeImprovement] Failed to record usage:`, err);
+  }
+
   console.log(`[CodeImprovement] Analysis complete: ${analysisResult.suggestions.length} suggestions`);
 
   return { analysis, result: analysisResult };

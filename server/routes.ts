@@ -394,6 +394,64 @@ export async function registerRoutes(
     }
   });
 
+  // ===== AUDIT LOG ROUTES =====
+
+  app.get("/api/audit-logs", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await storage.getAuditLogs(orgId, Math.min(limit, 100));
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch audit logs" });
+    }
+  });
+
+  // ===== DASHBOARD STATS ROUTE =====
+
+  app.get("/api/dashboard/stats", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const [usageSummary, integrations, roundtableSessions] = await Promise.all([
+        storage.getUsageSummary(orgId, thirtyDaysAgo),
+        storage.getIntegrations(orgId),
+        storage.getRoundtableSessions(orgId),
+      ]);
+
+      const connectedIntegrations = integrations.filter(i => i.status === "connected").length;
+      const activeRoundtables = roundtableSessions.filter(s => s.status === "active").length;
+
+      res.json({
+        usage: {
+          totalTokens: usageSummary.totalTokens,
+          totalCostUsd: usageSummary.totalCostUsd,
+          periodDays: 30,
+        },
+        integrations: {
+          total: integrations.length,
+          connected: connectedIntegrations,
+        },
+        roundtables: {
+          total: roundtableSessions.length,
+          active: activeRoundtables,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch dashboard stats" });
+    }
+  });
+
   // ===== AGENT ORCHESTRATION ROUTES =====
 
   app.post("/api/agents/run", requireAuth, agentLimiter, checkBudget, async (req: Request, res: Response) => {
