@@ -4,11 +4,16 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["shopify-cli"]
 
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 3456
+externalPort = 3001
 
 [[ports]]
 localPort = 5000
@@ -44,7 +49,7 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
-integrations = ["github:1.0.0", "google-drive:1.0.0", "onedrive:1.0.0", "notion:1.0.0", "stripe:2.0.0", "javascript_gemini_ai_integrations:1.0.0", "dropbox:1.0.0"]
+integrations = ["github:1.0.0", "google-drive:1.0.0", "onedrive:1.0.0", "notion:1.0.0", "stripe:2.0.0", "javascript_gemini_ai_integrations:1.0.0", "dropbox:1.0.0", "javascript_openrouter_ai_integrations:1.0.0", "javascript_anthropic_ai_integrations:1.0.0", "perplexity_v0:1.0.0", "javascript_openai_ai_integrations:1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-21db36d0-795f-4b22-9f33-a13e336c3575"

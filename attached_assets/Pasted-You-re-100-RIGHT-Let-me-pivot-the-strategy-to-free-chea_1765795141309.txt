@@ -1,0 +1,96 @@
+You're 100% RIGHT! Let me pivot the strategy to **free/cheap open-source models** instead:
+
+## **Free & Open Source AI Strategy** 🎯
+
+### **What You Should Actually Use (FREE)**
+
+```typescript
+// server/services/free-model-config.ts
+
+const FREE_MODELS = {
+  // Completely FREE (self-hosted or free APIs)
+  "ollama": {
+    "llama3.1:8b": { cost: 0, speed: "fast", quality: "good" },
+    "mistral:7b": { cost: 0, speed: "very-fast", quality: "decent" },
+    "codellama:13b": { cost: 0, speed: "medium", quality: "great-for-code" },
+    "phi-3": { cost: 0, speed: "very-fast", quality: "decent" },
+  },
+  
+  // Cheap alternatives (way cheaper than OpenAI)
+  "groq": {
+    "llama-3.1-70b": { input: 0.00059, output: 0.00079 }, // 20x cheaper than GPT-4
+    "mixtral-8x7b": { input: 0.00024, output: 0.00024 }, // 40x cheaper
+  },
+  
+  "together": {
+    "llama-3.1-405b": { input: 0.0035, output: 0.004 }, // Most powerful open source
+    "qwen-2.5-72b": { input: 0.0009, output: 0.0009 }, // Very cheap
+  },
+  
+  "huggingface": {
+    "free-inference-api": { cost: 0, limit: "1000 requests/day" },
+  },
+};
+
+const EXPENSIVE_MODELS_TO_AVOID = {
+  "openai": "DON'T USE - Too expensive",
+  "anthropic": "Only use if user brings own key",
+  "google-gemini": "Use free tier only",
+};
+```
+
+***
+
+## **Why You're Right About Open Source**
+
+### **OpenAI Pricing (EXPENSIVE 💸)**
+- GPT-4o: **$0.003/1k** input tokens
+- For 1M tokens: **$3,000** 😱
+
+### **Open Source Alternatives (CHEAP/FREE 🎉)**
+- Llama 3.1 70B via Groq: **$0.00059/1k** = **5x cheaper**
+- Mistral 7B self-hosted: **$0** (just server cost)
+- Ollama locally: **$0** (your computer)
+
+**Your app could run on $0-5/month instead of $50-500/month!**
+
+***
+
+## **Recommended Architecture (Free-First)**
+
+### **Tier 1: Completely Free (Primary)**
+```typescript
+// Use Ollama running locally on Replit/VPS
+const primaryModels = {
+  code: "codellama:13b",      // FREE, great for code
+  chat: "llama3.1:8b",        // FREE, fast responses
+  analysis: "mistral:7b",     // FREE, good reasoning
+};
+
+// Setup: Install Ollama on your server
+// curl https://ollama.ai/install.sh | sh
+// ollama pull llama3.1:8b
+// ollama serve
+```
+
+### **Tier 2: Cheap Fallback (When Free Unavailable)**
+```typescript
+const fallbackModels = {
+  code: "groq/llama-3.1-70b",    // $0.00059/1k - 5x cheaper than OpenAI
+  chat: "together/qwen-2.5-72b", // $0.0009/1k - 3x cheaper
+  search: "perplexity/pplx-7b",  // $0.00005/1k - basically free
+};
+```
+
+### **Tier 3: User Brings Their Own Key**
+```typescript
+// If user adds OpenAI key, use their account (not yours!)
+const userProvidedKeys = {
+  openai: process.env.USER_OPENAI_KEY || null,
+  anthropic: process.env.USER_ANTHROPIC_KEY || null,
+};
+```
+
+***
+
+## **Updated Cost Calculator (Free-First)**

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Key, Trash2, Plus, Loader2, CheckCircle, AlertCircle, BarChart3, Download, AlertTriangle, Shield, Smartphone, QrCode, Link2, ExternalLink } from "lucide-react";
+import { User, Key, Trash2, Plus, Loader2, CheckCircle, AlertCircle, BarChart3, Download, AlertTriangle, Shield, Smartphone, QrCode, Link2, ExternalLink, CreditCard, Gift, Ticket } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -91,10 +91,25 @@ export default function Settings() {
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
   const [savingSocial, setSavingSocial] = useState(false);
 
+  const [subscription, setSubscription] = useState<{
+    plan: string;
+    status: string;
+    currentPeriodEnd: string | null;
+    stripeCustomerId: string | null;
+  } | null>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
   useEffect(() => {
     loadCredentials();
     loadUsage();
     loadProfile();
+    loadSubscription();
   }, []);
 
   async function loadCredentials() {
@@ -135,6 +150,68 @@ export default function Settings() {
       }
     } catch (err) {
       console.error("Failed to load profile:", err);
+    }
+  }
+
+  async function loadSubscription() {
+    try {
+      const res = await fetch("/api/subscription");
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch (err) {
+      console.error("Failed to load subscription:", err);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  }
+
+  async function handleOpenPortal() {
+    setOpeningPortal(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to open subscription portal");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open portal");
+    } finally {
+      setOpeningPortal(false);
+    }
+  }
+
+  async function handleApplyPromoCode() {
+    if (!promoCode.trim()) {
+      setPromoError("Please enter a promo code");
+      return;
+    }
+    setApplyingPromo(true);
+    setPromoError(null);
+    setPromoSuccess(null);
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to apply promo code");
+      }
+      setPromoSuccess(data.message);
+      setPromoCode("");
+      setTimeout(() => setPromoSuccess(null), 5000);
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : "Failed to apply promo code");
+    } finally {
+      setApplyingPromo(false);
     }
   }
 
@@ -592,6 +669,147 @@ export default function Settings() {
                     QR sign-in sessions expire after 5 minutes for security. You'll need 2FA enabled to use this feature.
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Subscription Management Section */}
+            <div className="glass-panel p-6 rounded-2xl space-y-6" data-testid="section-subscription">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">Subscription</h2>
+              </div>
+
+              <Separator />
+
+              {loadingSubscription ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div 
+                    className="p-4 rounded-xl bg-white/5 border border-white/10"
+                    data-testid="card-subscription-status"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold capitalize" data-testid="text-subscription-plan">
+                            {subscription?.plan || "Free"} Plan
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span 
+                              className={`w-2 h-2 rounded-full ${
+                                subscription?.status === "active" ? "bg-green-500" : 
+                                subscription?.status === "canceled" ? "bg-red-500" : 
+                                subscription?.status === "past_due" ? "bg-yellow-500" : "bg-gray-400"
+                              }`}
+                            />
+                            <span className="text-sm text-muted-foreground capitalize" data-testid="text-subscription-status">
+                              {subscription?.status || "Active"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {subscription?.currentPeriodEnd && (
+                          <p className="text-sm text-muted-foreground" data-testid="text-subscription-renewal">
+                            Renews: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {subscription?.plan === "free" || !subscription?.stripeCustomerId ? (
+                      <Button 
+                        data-testid="button-upgrade-plan"
+                        onClick={() => window.location.href = "/shop"}
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        Upgrade Plan
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleOpenPortal}
+                        disabled={openingPortal}
+                        data-testid="button-manage-subscription"
+                      >
+                        {openingPortal ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Manage Subscription
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Promo Code Section */}
+            <div className="glass-panel p-6 rounded-2xl space-y-6" data-testid="section-promo-code">
+              <div className="flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">Promo Code</h2>
+              </div>
+
+              <Separator />
+
+              <p className="text-sm text-muted-foreground">
+                Have a promo code? Enter it below to redeem discounts and special offers.
+              </p>
+
+              {promoSuccess && (
+                <div className="flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-3 rounded-lg" data-testid="text-promo-success">
+                  <CheckCircle className="w-4 h-4" />
+                  {promoSuccess}
+                </div>
+              )}
+
+              {promoError && (
+                <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-3 rounded-lg" data-testid="text-promo-error">
+                  <AlertCircle className="w-4 h-4" />
+                  {promoError}
+                </div>
+              )}
+
+              <div className="flex items-end gap-3">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="promo-code">Promo Code</Label>
+                  <Input
+                    id="promo-code"
+                    placeholder="Enter your promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    data-testid="input-promo-code"
+                    className="uppercase"
+                  />
+                </div>
+                <Button
+                  onClick={handleApplyPromoCode}
+                  disabled={applyingPromo || !promoCode.trim()}
+                  data-testid="button-apply-promo"
+                >
+                  {applyingPromo ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Applying...
+                    </>
+                  ) : (
+                    "Apply"
+                  )}
+                </Button>
               </div>
             </div>
 

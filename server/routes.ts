@@ -10,11 +10,14 @@ import { retryService } from "./services/retryService";
 import { processGuideAgentRequest } from "./services/guideAgent";
 import { createMcpRouter } from "./mcp";
 import { getZapierMcpClient, testZapierMcpConnection } from "./services/zapierMcpClient";
+import { getFigmaMcpClient } from "./services/figmaMcpClient";
 import { dispatchEvent, generateSecretKey, getSampleData, SUPPORTED_EVENTS, type ZapierEventType } from "./services/zapierService";
 import { z } from "zod";
-import { insertUserSchema, insertOrgSchema, insertProjectSchema, insertIntegrationSchema, insertMemoryItemSchema } from "@shared/schema";
+import { insertUserSchema, insertOrgSchema, insertProjectSchema, insertIntegrationSchema, insertMemoryItemSchema, insertWorkspaceSchema } from "@shared/schema";
 import { getProviderAdapter } from "./services/providerAdapters";
+import { getAvailableProviders } from "./services/aiPriorityManager";
 import crypto from "crypto";
+import shopifyRouter from "./shopify";
 
 const VERSION = "1.0.0";
 
@@ -43,6 +46,9 @@ export async function registerRoutes(
   // MCP Protocol endpoint
   app.use("/mcp", createMcpRouter());
 
+  // Shopify integration routes
+  app.use("/api/shopify", shopifyRouter);
+
   // Health endpoint
   app.get("/api/health", (req, res) => {
     res.json({
@@ -50,6 +56,66 @@ export async function registerRoutes(
       time: new Date().toISOString(),
       version: VERSION,
     });
+  });
+
+  // ===== FIGMA DESIGN PREVIEW ROUTE =====
+
+  app.post("/api/figma/screenshot", apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { fileKey, nodeId } = z.object({
+        fileKey: z.string().min(1, "File key is required"),
+        nodeId: z.string().min(1, "Node ID is required"),
+      }).parse(req.body);
+
+      const figmaClient = getFigmaMcpClient();
+      if (!figmaClient) {
+        return res.status(503).json({ 
+          error: "Figma MCP not configured", 
+          message: "The Figma integration is not set up. Please configure the MCP_FIGMA_URL environment variable." 
+        });
+      }
+
+      const result = await figmaClient.getScreenshot(fileKey, nodeId);
+
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Failed to fetch screenshot", 
+          message: result.error 
+        });
+      }
+
+      res.json({
+        success: true,
+        imageData: result.imageData,
+        mimeType: result.mimeType || "image/png",
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid request", 
+          message: error.errors.map(e => e.message).join(", ") 
+        });
+      }
+      console.error("[Figma Screenshot] Error:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch Figma screenshot",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // ===== AI PROVIDERS ROUTE =====
+
+  app.get("/api/ai/providers", apiLimiter, (req: Request, res: Response) => {
+    try {
+      const providers = getAvailableProviders();
+      res.json({ 
+        providers,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get providers" });
+    }
   });
 
   // ===== AUTH ROUTES =====
@@ -863,6 +929,134 @@ export async function registerRoutes(
       res.json(project);
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
+    }
+  });
+
+  // ===== WORKSPACE ROUTES =====
+
+  app.get("/api/workspaces", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const workspaces = await storage.getWorkspacesByOrg(orgId);
+      res.json(workspaces);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workspaces" });
+    }
+  });
+
+  app.get("/api/workspaces/:id", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const workspace = await storage.getWorkspace(id);
+      
+      if (!workspace) {
+        return res.status(404).json({ error: "Workspace not found" });
+      }
+
+      if (workspace.orgId !== req.session.orgId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      res.json(workspace);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workspace" });
+    }
+  });
+
+  app.post("/api/workspaces", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      const userId = req.session.userId;
+      if (!orgId || !userId) {
+        return res.status(400).json({ error: "No organization or user context" });
+      }
+
+      const data = insertWorkspaceSchema.parse({
+        ...req.body,
+        orgId,
+        createdBy: userId,
+      });
+
+      const workspace = await storage.createWorkspace(data);
+      
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "workspace_created",
+        target: workspace.id,
+        detailJson: { name: workspace.name, type: workspace.type },
+      });
+
+      res.status(201).json(workspace);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
+    }
+  });
+
+  app.patch("/api/workspaces/:id", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const workspace = await storage.getWorkspace(id);
+      
+      if (!workspace) {
+        return res.status(404).json({ error: "Workspace not found" });
+      }
+
+      if (workspace.orgId !== req.session.orgId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const updateData = insertWorkspaceSchema.partial().parse(req.body);
+      const updated = await storage.updateWorkspace(id, updateData);
+
+      if (!updated) {
+        return res.status(404).json({ error: "Workspace not found" });
+      }
+
+      await storage.createAuditLog({
+        orgId: req.session.orgId!,
+        userId: req.session.userId || null,
+        action: "workspace_updated",
+        target: id,
+        detailJson: { updates: Object.keys(updateData) },
+      });
+
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
+    }
+  });
+
+  app.delete("/api/workspaces/:id", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const workspace = await storage.getWorkspace(id);
+      
+      if (!workspace) {
+        return res.status(404).json({ error: "Workspace not found" });
+      }
+
+      if (workspace.orgId !== req.session.orgId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      await storage.deleteWorkspace(id);
+
+      await storage.createAuditLog({
+        orgId: req.session.orgId!,
+        userId: req.session.userId || null,
+        action: "workspace_deleted",
+        target: id,
+        detailJson: { name: workspace.name },
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete workspace" });
     }
   });
 
@@ -2935,7 +3129,7 @@ export async function registerRoutes(
     try {
       const { prompt, provider, model, conversationHistory } = z.object({
         prompt: z.string().min(1, "Prompt is required").max(10000),
-        provider: z.enum(["openai", "anthropic", "xai", "perplexity", "google"]),
+        provider: z.enum(["openai", "anthropic", "xai", "perplexity", "google", "huggingface"]),
         model: z.string().optional(),
         conversationHistory: z.array(z.object({
           role: z.enum(["user", "assistant"]),
@@ -2984,6 +3178,56 @@ export async function registerRoutes(
           outputTokens: result.usage.outputTokens,
         } : undefined,
         provider,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: error.errors.map(e => e.message).join(", "),
+        });
+      }
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    }
+  });
+
+  // ===== HUGGINGFACE AI ROUTES =====
+
+  app.post("/api/ai/huggingface", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { prompt, model } = z.object({
+        prompt: z.string().min(1, "Prompt is required").max(10000),
+        model: z.string().optional(),
+      }).parse(req.body);
+
+      const { generateWithHuggingFace, getRateLimitStatus } = await import("./services/huggingfaceClient");
+      
+      const result = await generateWithHuggingFace(prompt, model);
+
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: result.error,
+          rateLimitStatus: getRateLimitStatus(),
+        });
+      }
+
+      await storage.createAuditLog({
+        orgId: req.session.orgId!,
+        userId: req.session.userId || null,
+        action: "huggingface_generate",
+        target: model || "meta-llama/Meta-Llama-3-8B-Instruct",
+        detailJson: { 
+          promptLength: prompt.length,
+          inputTokens: result.usage?.inputTokens,
+          outputTokens: result.usage?.outputTokens,
+        },
+      });
+
+      res.json({
+        content: result.content,
+        usage: result.usage,
+        provider: "huggingface",
+        rateLimitStatus: getRateLimitStatus(),
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -3605,6 +3849,147 @@ Format your response as JSON with the following structure:
       res.json({ files });
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Failed to list files" });
+    }
+  });
+
+  // ===== SUBSCRIPTION ROUTES =====
+
+  app.get("/api/subscription", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const subscription = await storage.getSubscriptionByOrgId(orgId);
+      
+      if (!subscription) {
+        return res.json({
+          plan: "free",
+          status: "active",
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          currentPeriodEnd: null,
+        });
+      }
+
+      res.json({
+        id: subscription.id,
+        plan: subscription.plan,
+        status: subscription.status,
+        stripeCustomerId: subscription.stripeCustomerId,
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd === "true",
+      });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch subscription" });
+    }
+  });
+
+  app.post("/api/subscription/portal", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const orgId = req.session.orgId;
+      if (!orgId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const subscription = await storage.getSubscriptionByOrgId(orgId);
+      
+      if (!subscription || !subscription.stripeCustomerId) {
+        return res.status(400).json({ error: "No active subscription found. Please upgrade first." });
+      }
+
+      const { createStripePortalSession } = await import("./services/stripeClient");
+      const returnUrl = `${req.protocol}://${req.get("host")}/settings`;
+      const session = await createStripePortalSession(subscription.stripeCustomerId, returnUrl);
+
+      await storage.createAuditLog({
+        orgId,
+        userId: req.session.userId || null,
+        action: "subscription_portal_opened",
+        target: "stripe",
+        detailJson: { subscriptionId: subscription.id },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to create portal session" });
+    }
+  });
+
+  // ===== PROMO CODE ROUTES =====
+
+  app.post("/api/promo/redeem", requireAuth, apiLimiter, async (req: Request, res: Response) => {
+    try {
+      const { code } = z.object({
+        code: z.string().min(1).max(50),
+      }).parse(req.body);
+
+      const orgId = req.session.orgId;
+      const userId = req.session.userId;
+      if (!orgId || !userId) {
+        return res.status(400).json({ error: "No organization set" });
+      }
+
+      const promoCode = await storage.getPromoCodeByCode(code.toUpperCase());
+      
+      if (!promoCode) {
+        return res.status(404).json({ error: "Invalid promo code" });
+      }
+
+      const now = new Date();
+      if (promoCode.validFrom > now) {
+        return res.status(400).json({ error: "This promo code is not yet valid" });
+      }
+      if (promoCode.validUntil && promoCode.validUntil < now) {
+        return res.status(400).json({ error: "This promo code has expired" });
+      }
+
+      if (promoCode.maxUses !== null && promoCode.usedCount >= promoCode.maxUses) {
+        return res.status(400).json({ error: "This promo code has reached its usage limit" });
+      }
+
+      const alreadyRedeemed = await storage.hasOrgRedeemedPromoCode(orgId, promoCode.id);
+      if (alreadyRedeemed) {
+        return res.status(400).json({ error: "You have already redeemed this promo code" });
+      }
+
+      const subscription = await storage.getSubscriptionByOrgId(orgId);
+      
+      await storage.createPromoRedemption({
+        promoCodeId: promoCode.id,
+        orgId,
+        subscriptionId: subscription?.id || null,
+      });
+      
+      await storage.incrementPromoCodeUsage(promoCode.id);
+
+      await storage.createAuditLog({
+        orgId,
+        userId,
+        action: "promo_code_redeemed",
+        target: promoCode.code,
+        detailJson: { 
+          discountType: promoCode.discountType,
+          discountValue: promoCode.discountValue,
+        },
+      });
+
+      const discountText = promoCode.discountType === "percent" 
+        ? `${promoCode.discountValue}% off`
+        : `$${promoCode.discountValue} off`;
+
+      res.json({ 
+        success: true, 
+        message: `Promo code applied! You get ${discountText}.`,
+        discount: {
+          type: promoCode.discountType,
+          value: promoCode.discountValue,
+        }
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to redeem promo code" });
     }
   });
 

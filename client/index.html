@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
 
     <meta property="og:title" content="AI Orchestrator" />
     <meta property="og:description" content="Collaborative AI Workspace for GitHub, Notion, and more." />
@@ -12,6 +12,21 @@
     <meta name="twitter:title" content="AI Orchestrator" />
     <meta name="twitter:description" content="Collaborative AI Workspace for GitHub, Notion, and more." />
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AI Hub" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AI Hub" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
+    
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <!-- Amplitude Analytics -->
@@ -25,5 +40,20 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('ServiceWorker registered with scope:', registration.scope);
+            })
+            .catch(function(error) {
+              console.log('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

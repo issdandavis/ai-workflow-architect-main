@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import PublicHome from "@/pages/PublicHome";
@@ -23,7 +24,11 @@ import Admin from "@/pages/Admin";
 import Status from "@/pages/Status";
 import Logs from "@/pages/Logs";
 import Workflows from "@/pages/Workflows";
+import Workspaces from "@/pages/Workspaces";
 import Gallery from "@/pages/Gallery";
+import WebsiteBuilder from "@/pages/WebsiteBuilder";
+import ShopifyOnboarding from "@/pages/ShopifyOnboarding";
+import ShopifyDashboard from "@/pages/ShopifyDashboard";
 
 const PUBLIC_ROUTES = ["/", "/shop", "/login", "/signup", "/gallery"];
 
@@ -53,7 +58,13 @@ function Router() {
       <Route path="/status" component={Status} />
       <Route path="/logs" component={Logs} />
       <Route path="/workflows" component={Workflows} />
+      <Route path="/workspaces" component={Workspaces} />
+      <Route path="/website-builder" component={WebsiteBuilder} />
       
+      {/* Shopify Routes */}
+      <Route path="/shopify/onboarding" component={ShopifyOnboarding} />
+      <Route path="/shopify/dashboard" component={ShopifyDashboard} />
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -77,6 +88,7 @@ function App() {
         <Toaster />
         <Router />
         <ConditionalAssistant />
+        <PWAInstallPrompt />
       </TooltipProvider>
     </QueryClientProvider>
   );
