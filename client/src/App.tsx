@@ -23,8 +23,9 @@ import Admin from "@/pages/Admin";
 import Status from "@/pages/Status";
 import Logs from "@/pages/Logs";
 import Workflows from "@/pages/Workflows";
+import Gallery from "@/pages/Gallery";
 
-const PUBLIC_ROUTES = ["/", "/shop", "/login", "/signup"];
+const PUBLIC_ROUTES = ["/", "/shop", "/login", "/signup", "/gallery"];
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/shop" component={Shop} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
+      <Route path="/gallery" component={Gallery} />
 
       {/* Backend / Dashboard Routes */}
       <Route path="/dashboard" component={Dashboard} />
