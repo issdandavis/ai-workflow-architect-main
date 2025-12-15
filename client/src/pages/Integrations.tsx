@@ -13,6 +13,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Github, 
   Database, 
@@ -30,7 +37,12 @@ import {
   Bot,
   Brain,
   ExternalLink,
-  Shield
+  Shield,
+  Plus,
+  Trash2,
+  Copy,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +63,38 @@ interface ProviderConfig {
 interface CredentialsResponse {
   credentials: ProviderCredential[];
   supportedProviders: ProviderConfig[];
+}
+
+interface ZapierWebhook {
+  id: string;
+  event: string;
+  targetUrl: string;
+  isActive: boolean;
+  triggerCount: number;
+  lastTriggeredAt: string | null;
+  createdAt: string;
+}
+
+const ZAPIER_EVENTS = [
+  { value: "user.created", label: "User Created" },
+  { value: "project.created", label: "Project Created" },
+  { value: "agent_run.completed", label: "Agent Run Completed" },
+  { value: "roundtable.message", label: "Roundtable Message" },
+  { value: "workflow.completed", label: "Workflow Completed" },
+  { value: "integration.connected", label: "Integration Connected" },
+];
+
+function maskUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const hostParts = parsed.hostname.split(".");
+    if (hostParts.length > 1) {
+      return `${parsed.protocol}//${hostParts[0]}...${hostParts[hostParts.length - 1]}${parsed.pathname.slice(0, 10)}...`;
+    }
+    return `${parsed.protocol}//${parsed.hostname.slice(0, 10)}...`;
+  } catch {
+    return url.slice(0, 20) + "...";
+  }
 }
 
 const AI_PROVIDERS = [
@@ -187,6 +231,12 @@ export default function Integrations() {
   const [testResult, setTestResult] = useState<{ valid?: boolean; error?: string; models?: string[] } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   
+  const [zapierApiKey, setZapierApiKey] = useState<string | null>(null);
+  const [showZapierKey, setShowZapierKey] = useState(false);
+  const [addWebhookDialogOpen, setAddWebhookDialogOpen] = useState(false);
+  const [newWebhookEvent, setNewWebhookEvent] = useState<string>("");
+  const [newWebhookUrl, setNewWebhookUrl] = useState("");
+  
   const queryClient = useQueryClient();
 
   const { data: credentialsData, isLoading } = useQuery<CredentialsResponse>({
@@ -243,6 +293,103 @@ export default function Integrations() {
       queryClient.invalidateQueries({ queryKey: ["vault-credentials"] });
     },
   });
+
+  const { data: zapierWebhooks, isLoading: isLoadingWebhooks, refetch: refetchWebhooks } = useQuery<ZapierWebhook[]>({
+    queryKey: ["zapier-webhooks", zapierApiKey],
+    queryFn: async () => {
+      if (!zapierApiKey) return [];
+      const res = await fetch("/api/zapier/hooks", {
+        headers: { "x-api-key": zapierApiKey },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          setZapierApiKey(null);
+          return [];
+        }
+        throw new Error("Failed to fetch webhooks");
+      }
+      return res.json();
+    },
+    enabled: !!zapierApiKey,
+  });
+
+  const generateApiKeyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/zapier/apikey/generate", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to generate API key");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setZapierApiKey(data.key);
+    },
+  });
+
+  const subscribeWebhookMutation = useMutation({
+    mutationFn: async ({ event, targetUrl }: { event: string; targetUrl: string }) => {
+      if (!zapierApiKey) throw new Error("No API key");
+      const res = await fetch("/api/zapier/hooks/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": zapierApiKey,
+        },
+        body: JSON.stringify({ event, targetUrl }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to subscribe");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["zapier-webhooks"] });
+      setAddWebhookDialogOpen(false);
+      setNewWebhookEvent("");
+      setNewWebhookUrl("");
+    },
+  });
+
+  const deleteWebhookMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!zapierApiKey) throw new Error("No API key");
+      const res = await fetch(`/api/zapier/hooks/${id}`, {
+        method: "DELETE",
+        headers: { "x-api-key": zapierApiKey },
+      });
+      if (!res.ok) throw new Error("Failed to delete webhook");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["zapier-webhooks"] });
+    },
+  });
+
+  const handleGenerateApiKey = async () => {
+    await generateApiKeyMutation.mutateAsync();
+  };
+
+  const handleCopyApiKey = () => {
+    if (zapierApiKey) {
+      navigator.clipboard.writeText(zapierApiKey);
+    }
+  };
+
+  const handleAddWebhook = async () => {
+    if (!newWebhookEvent || !newWebhookUrl.trim()) return;
+    await subscribeWebhookMutation.mutateAsync({
+      event: newWebhookEvent,
+      targetUrl: newWebhookUrl.trim(),
+    });
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    if (confirm("Are you sure you want to delete this webhook subscription?")) {
+      await deleteWebhookMutation.mutateAsync(id);
+    }
+  };
 
   const getProviderStatus = (providerName: string) => {
     const cred = credentialsData?.credentials.find(c => c.provider === providerName);
@@ -417,6 +564,176 @@ export default function Integrations() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Zapier Integration Section */}
+        <div data-testid="zapier-integration-section">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-orange-400" />
+            Zapier Integration
+          </h2>
+          <div className="glass-panel p-6 rounded-2xl border-white/5">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-orange-500/10 text-orange-400">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Webhook Automation</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your workflows to Zapier and automate across 5,000+ apps.
+                  </p>
+                </div>
+              </div>
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "capitalize border",
+                  zapierApiKey ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                )}
+                data-testid="zapier-connection-status"
+              >
+                {zapierApiKey && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                {zapierApiKey ? "connected" : "disconnected"}
+              </Badge>
+            </div>
+
+            {/* API Key Section */}
+            <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-medium">API Key</Label>
+                {zapierApiKey && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowZapierKey(!showZapierKey)}
+                      data-testid="toggle-zapier-key-visibility"
+                    >
+                      {showZapierKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyApiKey}
+                      data-testid="copy-zapier-key"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {zapierApiKey ? (
+                <div className="font-mono text-sm bg-black/20 p-3 rounded-lg break-all" data-testid="zapier-api-key-display">
+                  {showZapierKey ? zapierApiKey : "••••••••••••••••••••••••••••••••"}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Generate an API key to start using Zapier webhooks.
+                  </p>
+                  <Button
+                    onClick={handleGenerateApiKey}
+                    disabled={generateApiKeyMutation.isPending}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    data-testid="generate-zapier-key"
+                  >
+                    {generateApiKeyMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4 mr-2" />
+                        Generate API Key
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Webhook Subscriptions */}
+            {zapierApiKey && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium">Webhook Subscriptions</h4>
+                  <Button
+                    size="sm"
+                    onClick={() => setAddWebhookDialogOpen(true)}
+                    className="gap-1"
+                    data-testid="add-webhook-btn"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Webhook
+                  </Button>
+                </div>
+
+                {isLoadingWebhooks ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : zapierWebhooks && zapierWebhooks.length > 0 ? (
+                  <div className="space-y-3">
+                    {zapierWebhooks.map((webhook) => (
+                      <div
+                        key={webhook.id}
+                        className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10"
+                        data-testid={`webhook-item-${webhook.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm" data-testid={`webhook-event-${webhook.id}`}>
+                              {ZAPIER_EVENTS.find(e => e.value === webhook.event)?.label || webhook.event}
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                webhook.isActive 
+                                  ? "bg-green-500/10 text-green-400 border-green-500/20" 
+                                  : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                              )}
+                              data-testid={`webhook-status-${webhook.id}`}
+                            >
+                              {webhook.isActive ? "active" : "inactive"}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate" data-testid={`webhook-url-${webhook.id}`}>
+                            {maskUrl(webhook.targetUrl)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1" data-testid={`webhook-trigger-count-${webhook.id}`}>
+                            Triggered {webhook.triggerCount} time{webhook.triggerCount !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-2"
+                          onClick={() => handleDeleteWebhook(webhook.id)}
+                          disabled={deleteWebhookMutation.isPending}
+                          data-testid={`delete-webhook-${webhook.id}`}
+                        >
+                          {deleteWebhookMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground" data-testid="no-webhooks-message">
+                    <Zap className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No webhook subscriptions yet.</p>
+                    <p className="text-xs mt-1">Add a webhook to start receiving events.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -619,6 +936,92 @@ export default function Integrations() {
                 </>
               ) : (
                 "Save & Connect"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Webhook Dialog */}
+      <Dialog open={addWebhookDialogOpen} onOpenChange={setAddWebhookDialogOpen}>
+        <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-md" data-testid="add-webhook-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Zap className="w-5 h-5 text-orange-400" />
+              Add Webhook Subscription
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Subscribe to events and receive notifications at your webhook URL.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="webhookEvent" className="text-white">Event Type</Label>
+              <Select value={newWebhookEvent} onValueChange={setNewWebhookEvent}>
+                <SelectTrigger 
+                  className="bg-gray-800 border-gray-700 text-white"
+                  data-testid="webhook-event-select"
+                >
+                  <SelectValue placeholder="Select an event..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {ZAPIER_EVENTS.map((event) => (
+                    <SelectItem 
+                      key={event.value} 
+                      value={event.value}
+                      className="text-white hover:bg-gray-700"
+                      data-testid={`webhook-event-option-${event.value}`}
+                    >
+                      {event.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="webhookUrl" className="text-white">Target URL</Label>
+              <Input
+                id="webhookUrl"
+                type="url"
+                placeholder="https://hooks.zapier.com/..."
+                value={newWebhookUrl}
+                onChange={(e) => setNewWebhookUrl(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white"
+                data-testid="webhook-url-input"
+              />
+              <p className="text-xs text-gray-500">
+                The URL where webhook payloads will be sent.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAddWebhookDialogOpen(false);
+                setNewWebhookEvent("");
+                setNewWebhookUrl("");
+              }}
+              data-testid="cancel-add-webhook"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddWebhook}
+              disabled={!newWebhookEvent || !newWebhookUrl.trim() || subscribeWebhookMutation.isPending}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              data-testid="confirm-add-webhook"
+            >
+              {subscribeWebhookMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Webhook"
               )}
             </Button>
           </DialogFooter>

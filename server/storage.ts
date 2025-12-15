@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { 
-  users, type User, type InsertUser,
+  users, type User, type InsertUser, type UpsertUser,
   orgs, type Org, type InsertOrg,
   projects, type Project, type InsertProject,
   integrations, type Integration, type InsertIntegration,
@@ -32,6 +32,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(userData: UpsertUser): Promise<User>;
   
   // Orgs
   getOrg(id: string): Promise<Org | undefined>;
@@ -199,6 +200,30 @@ export class DbStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        email: userData.email || `oauth_${userData.id}@placeholder.local`,
+        passwordHash: "",
+        role: "owner",
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        profileImageUrl: userData.profileImageUrl,
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+        },
+      })
+      .returning();
     return user;
   }
 

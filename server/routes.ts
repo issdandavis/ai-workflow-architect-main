@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword, requireAuth, attachUser, validateApiKey } from "./auth";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { authLimiter, apiLimiter, agentLimiter } from "./middleware/rateLimiter";
 import { checkBudget } from "./middleware/costGovernor";
 import { orchestratorQueue } from "./services/orchestrator";
@@ -32,6 +33,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Setup Replit Auth (social login) BEFORE other routes
+  await setupAuth(app);
   
   // Attach user to all requests
   app.use(attachUser);
@@ -137,6 +141,41 @@ export async function registerRoutes(
       return res.status(404).json({ error: "User not found" });
     }
     res.json({ id: user.id, email: user.email, role: user.role });
+  });
+
+  // Social login user endpoint (Replit Auth)
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if user has an org, if not create one
+      let orgs = await storage.getOrgsByUser(user.id);
+      if (orgs.length === 0) {
+        const org = await storage.createOrg({
+          name: `${user.email}'s Organization`,
+          ownerUserId: user.id,
+        });
+        orgs = [org];
+      }
+      
+      res.json({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        orgId: orgs[0]?.id,
+      });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
   });
 
   // ===== ASSISTANT CHAT ROUTES =====
