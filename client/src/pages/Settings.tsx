@@ -47,6 +47,30 @@ interface SocialLinks {
   github?: string;
   linkedin?: string;
   website?: string;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  tiktok?: string;
+  discord?: string;
+  twitch?: string;
+  medium?: string;
+  substack?: string;
+  behance?: string;
+  dribbble?: string;
+  kofi?: string;
+  patreon?: string;
+  mastodon?: string;
+  bluesky?: string;
+  threads?: string;
+  pinterest?: string;
+  reddit?: string;
+  spotify?: string;
+  soundcloud?: string;
+  bandcamp?: string;
+  devto?: string;
+  hashnode?: string;
+  codepen?: string;
+  stackoverflow?: string;
 }
 
 export default function Settings() {
@@ -580,116 +604,279 @@ export default function Settings() {
               <Separator />
 
               <p className="text-sm text-muted-foreground">
-                Add your Linktree, Orchid, and other social profile links. These will be displayed on your public profile.
+                Your official social links hub. Add all your profiles to share with the world.
               </p>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="linktree" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">L</span>
-                    Linktree
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="linktree"
-                      placeholder="https://linktr.ee/yourusername"
-                      value={socialLinks.linktree || ""}
-                      onChange={(e) => setSocialLinks({ ...socialLinks, linktree: e.target.value })}
-                      data-testid="input-linktree"
-                    />
-                    {socialLinks.linktree && (
-                      <a 
-                        href={socialLinks.linktree} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 transition"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    )}
+              {/* Link Aggregators */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Link Aggregators</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="linktree" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">L</span>
+                      Linktree
+                    </Label>
+                    <Input id="linktree" placeholder="https://linktr.ee/you" value={socialLinks.linktree || ""} onChange={(e) => setSocialLinks({ ...socialLinks, linktree: e.target.value })} data-testid="input-linktree" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="orchid" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold">O</span>
+                      Orchid
+                    </Label>
+                    <Input id="orchid" placeholder="https://orchid.id/you" value={socialLinks.orchid || ""} onChange={(e) => setSocialLinks({ ...socialLinks, orchid: e.target.value })} data-testid="input-orchid" className="h-9" />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="orchid" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">O</span>
-                    Orchid
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="orchid"
-                      placeholder="https://orchid.id/yourusername"
-                      value={socialLinks.orchid || ""}
-                      onChange={(e) => setSocialLinks({ ...socialLinks, orchid: e.target.value })}
-                      data-testid="input-orchid"
-                    />
-                    {socialLinks.orchid && (
-                      <a 
-                        href={socialLinks.orchid} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 transition"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    )}
+              {/* Main Social */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Main Social</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="twitter" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">𝕏</span>
+                      Twitter / X
+                    </Label>
+                    <Input id="twitter" placeholder="https://x.com/you" value={socialLinks.twitter || ""} onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })} data-testid="input-twitter" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="instagram" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white text-[10px] font-bold">IG</span>
+                      Instagram
+                    </Label>
+                    <Input id="instagram" placeholder="https://instagram.com/you" value={socialLinks.instagram || ""} onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })} data-testid="input-instagram" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="facebook" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">f</span>
+                      Facebook
+                    </Label>
+                    <Input id="facebook" placeholder="https://facebook.com/you" value={socialLinks.facebook || ""} onChange={(e) => setSocialLinks({ ...socialLinks, facebook: e.target.value })} data-testid="input-facebook" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="threads" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">@</span>
+                      Threads
+                    </Label>
+                    <Input id="threads" placeholder="https://threads.net/@you" value={socialLinks.threads || ""} onChange={(e) => setSocialLinks({ ...socialLinks, threads: e.target.value })} data-testid="input-threads" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="bluesky" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-sky-500 flex items-center justify-center text-white text-[10px] font-bold">B</span>
+                      Bluesky
+                    </Label>
+                    <Input id="bluesky" placeholder="https://bsky.app/profile/you" value={socialLinks.bluesky || ""} onChange={(e) => setSocialLinks({ ...socialLinks, bluesky: e.target.value })} data-testid="input-bluesky" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="mastodon" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-white text-[10px] font-bold">M</span>
+                      Mastodon
+                    </Label>
+                    <Input id="mastodon" placeholder="https://mastodon.social/@you" value={socialLinks.mastodon || ""} onChange={(e) => setSocialLinks({ ...socialLinks, mastodon: e.target.value })} data-testid="input-mastodon" className="h-9" />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="twitter" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-black flex items-center justify-center text-white text-xs font-bold">𝕏</span>
-                    Twitter / X
-                  </Label>
-                  <Input
-                    id="twitter"
-                    placeholder="https://twitter.com/yourusername"
-                    value={socialLinks.twitter || ""}
-                    onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })}
-                    data-testid="input-twitter"
-                  />
+              {/* Video & Streaming */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Video & Streaming</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="youtube" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-red-600 flex items-center justify-center text-white text-[10px] font-bold">YT</span>
+                      YouTube
+                    </Label>
+                    <Input id="youtube" placeholder="https://youtube.com/@you" value={socialLinks.youtube || ""} onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })} data-testid="input-youtube" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="tiktok" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">TT</span>
+                      TikTok
+                    </Label>
+                    <Input id="tiktok" placeholder="https://tiktok.com/@you" value={socialLinks.tiktok || ""} onChange={(e) => setSocialLinks({ ...socialLinks, tiktok: e.target.value })} data-testid="input-tiktok" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="twitch" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center text-white text-[10px] font-bold">TV</span>
+                      Twitch
+                    </Label>
+                    <Input id="twitch" placeholder="https://twitch.tv/you" value={socialLinks.twitch || ""} onChange={(e) => setSocialLinks({ ...socialLinks, twitch: e.target.value })} data-testid="input-twitch" className="h-9" />
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="github" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-gray-800 flex items-center justify-center text-white text-xs font-bold">GH</span>
-                    GitHub
-                  </Label>
-                  <Input
-                    id="github"
-                    placeholder="https://github.com/yourusername"
-                    value={socialLinks.github || ""}
-                    onChange={(e) => setSocialLinks({ ...socialLinks, github: e.target.value })}
-                    data-testid="input-github"
-                  />
+              {/* Professional */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Professional</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="linkedin" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-blue-700 flex items-center justify-center text-white text-[10px] font-bold">in</span>
+                      LinkedIn
+                    </Label>
+                    <Input id="linkedin" placeholder="https://linkedin.com/in/you" value={socialLinks.linkedin || ""} onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })} data-testid="input-linkedin" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="website" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">W</span>
+                      Website
+                    </Label>
+                    <Input id="website" placeholder="https://yoursite.com" value={socialLinks.website || ""} onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })} data-testid="input-website" className="h-9" />
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">in</span>
-                    LinkedIn
-                  </Label>
-                  <Input
-                    id="linkedin"
-                    placeholder="https://linkedin.com/in/yourusername"
-                    value={socialLinks.linkedin || ""}
-                    onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })}
-                    data-testid="input-linkedin"
-                  />
+              {/* Developer */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Developer</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="github" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-gray-800 flex items-center justify-center text-white text-[10px] font-bold">GH</span>
+                      GitHub
+                    </Label>
+                    <Input id="github" placeholder="https://github.com/you" value={socialLinks.github || ""} onChange={(e) => setSocialLinks({ ...socialLinks, github: e.target.value })} data-testid="input-github" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="stackoverflow" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">SO</span>
+                      Stack Overflow
+                    </Label>
+                    <Input id="stackoverflow" placeholder="https://stackoverflow.com/users/you" value={socialLinks.stackoverflow || ""} onChange={(e) => setSocialLinks({ ...socialLinks, stackoverflow: e.target.value })} data-testid="input-stackoverflow" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="codepen" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">CP</span>
+                      CodePen
+                    </Label>
+                    <Input id="codepen" placeholder="https://codepen.io/you" value={socialLinks.codepen || ""} onChange={(e) => setSocialLinks({ ...socialLinks, codepen: e.target.value })} data-testid="input-codepen" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="devto" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">D</span>
+                      Dev.to
+                    </Label>
+                    <Input id="devto" placeholder="https://dev.to/you" value={socialLinks.devto || ""} onChange={(e) => setSocialLinks({ ...socialLinks, devto: e.target.value })} data-testid="input-devto" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="hashnode" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">H</span>
+                      Hashnode
+                    </Label>
+                    <Input id="hashnode" placeholder="https://hashnode.com/@you" value={socialLinks.hashnode || ""} onChange={(e) => setSocialLinks({ ...socialLinks, hashnode: e.target.value })} data-testid="input-hashnode" className="h-9" />
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="website" className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">W</span>
-                    Personal Website
-                  </Label>
-                  <Input
-                    id="website"
-                    placeholder="https://yourwebsite.com"
-                    value={socialLinks.website || ""}
-                    onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })}
-                    data-testid="input-website"
-                  />
+              {/* Creative & Design */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Creative & Design</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="behance" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">Be</span>
+                      Behance
+                    </Label>
+                    <Input id="behance" placeholder="https://behance.net/you" value={socialLinks.behance || ""} onChange={(e) => setSocialLinks({ ...socialLinks, behance: e.target.value })} data-testid="input-behance" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="dribbble" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-pink-500 flex items-center justify-center text-white text-[10px] font-bold">Dr</span>
+                      Dribbble
+                    </Label>
+                    <Input id="dribbble" placeholder="https://dribbble.com/you" value={socialLinks.dribbble || ""} onChange={(e) => setSocialLinks({ ...socialLinks, dribbble: e.target.value })} data-testid="input-dribbble" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="pinterest" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-red-600 flex items-center justify-center text-white text-[10px] font-bold">P</span>
+                      Pinterest
+                    </Label>
+                    <Input id="pinterest" placeholder="https://pinterest.com/you" value={socialLinks.pinterest || ""} onChange={(e) => setSocialLinks({ ...socialLinks, pinterest: e.target.value })} data-testid="input-pinterest" className="h-9" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Writing */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Writing & Blogging</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="medium" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-black flex items-center justify-center text-white text-[10px] font-bold">M</span>
+                      Medium
+                    </Label>
+                    <Input id="medium" placeholder="https://medium.com/@you" value={socialLinks.medium || ""} onChange={(e) => setSocialLinks({ ...socialLinks, medium: e.target.value })} data-testid="input-medium" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="substack" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">S</span>
+                      Substack
+                    </Label>
+                    <Input id="substack" placeholder="https://you.substack.com" value={socialLinks.substack || ""} onChange={(e) => setSocialLinks({ ...socialLinks, substack: e.target.value })} data-testid="input-substack" className="h-9" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Music */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Music</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="spotify" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-green-500 flex items-center justify-center text-white text-[10px] font-bold">S</span>
+                      Spotify
+                    </Label>
+                    <Input id="spotify" placeholder="https://open.spotify.com/artist/you" value={socialLinks.spotify || ""} onChange={(e) => setSocialLinks({ ...socialLinks, spotify: e.target.value })} data-testid="input-spotify" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="soundcloud" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">SC</span>
+                      SoundCloud
+                    </Label>
+                    <Input id="soundcloud" placeholder="https://soundcloud.com/you" value={socialLinks.soundcloud || ""} onChange={(e) => setSocialLinks({ ...socialLinks, soundcloud: e.target.value })} data-testid="input-soundcloud" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="bandcamp" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-teal-500 flex items-center justify-center text-white text-[10px] font-bold">BC</span>
+                      Bandcamp
+                    </Label>
+                    <Input id="bandcamp" placeholder="https://you.bandcamp.com" value={socialLinks.bandcamp || ""} onChange={(e) => setSocialLinks({ ...socialLinks, bandcamp: e.target.value })} data-testid="input-bandcamp" className="h-9" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Community & Support */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Community & Support</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="discord" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">D</span>
+                      Discord
+                    </Label>
+                    <Input id="discord" placeholder="https://discord.gg/invite" value={socialLinks.discord || ""} onChange={(e) => setSocialLinks({ ...socialLinks, discord: e.target.value })} data-testid="input-discord" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="reddit" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-orange-600 flex items-center justify-center text-white text-[10px] font-bold">R</span>
+                      Reddit
+                    </Label>
+                    <Input id="reddit" placeholder="https://reddit.com/u/you" value={socialLinks.reddit || ""} onChange={(e) => setSocialLinks({ ...socialLinks, reddit: e.target.value })} data-testid="input-reddit" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="patreon" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">P</span>
+                      Patreon
+                    </Label>
+                    <Input id="patreon" placeholder="https://patreon.com/you" value={socialLinks.patreon || ""} onChange={(e) => setSocialLinks({ ...socialLinks, patreon: e.target.value })} data-testid="input-patreon" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="kofi" className="flex items-center gap-2 text-xs">
+                      <span className="w-4 h-4 rounded bg-cyan-500 flex items-center justify-center text-white text-[10px] font-bold">K</span>
+                      Ko-fi
+                    </Label>
+                    <Input id="kofi" placeholder="https://ko-fi.com/you" value={socialLinks.kofi || ""} onChange={(e) => setSocialLinks({ ...socialLinks, kofi: e.target.value })} data-testid="input-kofi" className="h-9" />
+                  </div>
                 </div>
               </div>
 
