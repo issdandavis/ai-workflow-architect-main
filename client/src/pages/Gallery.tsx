@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Sparkles, Eye, Download, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
 import bookCoverImage from "@assets/Book_Cover_Spiral_Purple_n_gold_1765780034021.png";
 
 interface ArtworkItem {
@@ -129,29 +128,27 @@ export default function Gallery() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <nav className="border-b border-border bg-card/80 backdrop-blur-xl px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <Link href="/shop">
+          <a href="/">
             <Button variant="ghost" size="icon" data-testid="button-back">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-          </Link>
-          <Link href="/">
-            <span className="text-lg md:text-xl font-bold cursor-pointer hover:text-primary transition-colors" data-testid="link-home">
-              AI Orchestration Hub
-            </span>
-          </Link>
+          </a>
+          <a href="/" className="text-lg md:text-xl font-bold cursor-pointer hover:text-primary transition-colors" data-testid="link-home">
+            AI Orchestration Hub
+          </a>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
-          <Link href="/shop">
+          <a href="/shop">
             <Button variant="ghost" size="sm" data-testid="link-shop">
               Pricing
             </Button>
-          </Link>
-          <Link href="/login">
+          </a>
+          <a href="/login">
             <Button variant="ghost" size="sm" data-testid="button-login">Log In</Button>
-          </Link>
-          <Link href="/signup">
+          </a>
+          <a href="/signup">
             <Button size="sm" data-testid="button-signup">Get Started</Button>
-          </Link>
+          </a>
         </div>
       </nav>
 
@@ -213,12 +210,12 @@ export default function Gallery() {
             <p className="text-muted-foreground mb-4 max-w-md">
               Create amazing AI-generated artwork with our platform and submit it for a chance to be featured in our gallery.
             </p>
-            <Link href="/signup">
+            <a href="/signup">
               <Button data-testid="button-start-creating">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Start Creating
               </Button>
-            </Link>
+            </a>
           </Card>
         </motion.div>
       </div>

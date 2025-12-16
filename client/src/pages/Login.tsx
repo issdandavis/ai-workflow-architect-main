@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Cpu, User } from "lucide-react";
+import { Cpu, User, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Spinner } from "@/components/ui/spinner";
 import bgImage from "@assets/generated_images/secure_futuristic_authentication_portal_background.png";
@@ -84,6 +84,11 @@ export default function Login() {
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-0" />
+
+      <a href="/" className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="link-back-home">
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">Back to Home</span>
+      </a>
 
       <div className="relative z-10 w-full max-w-md p-8 glass-panel rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         <div className="flex flex-col items-center mb-8">

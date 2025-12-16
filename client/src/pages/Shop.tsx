@@ -6,7 +6,6 @@ import { Check, X, Shield, Brain, CreditCard, Sparkles, Volume2, VolumeX, Image 
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
 import { useState } from "react";
 import shopMusic from "@assets/Old_School_Flow_1765749666740.wav";
 
@@ -167,18 +166,16 @@ export default function Shop() {
       <audio ref={audioRef} src={shopMusic} data-testid="audio-shop-music" />
       
       <nav className="border-b border-border bg-card/80 backdrop-blur-xl px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <Link href="/">
-          <span className="text-lg md:text-xl font-bold cursor-pointer hover:text-primary transition-colors" data-testid="link-home">
-            AI Orchestration Hub
-          </span>
-        </Link>
+        <a href="/" className="text-lg md:text-xl font-bold cursor-pointer hover:text-primary transition-colors" data-testid="link-home">
+          AI Orchestration Hub
+        </a>
         <div className="flex items-center gap-2 md:gap-4">
-          <Link href="/gallery">
+          <a href="/gallery">
             <Button variant="ghost" size="sm" className="hidden sm:flex" data-testid="link-gallery">
               <Image className="w-4 h-4 mr-2" />
               Gallery
             </Button>
-          </Link>
+          </a>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -188,12 +185,12 @@ export default function Shop() {
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </Button>
-          <Link href="/login">
+          <a href="/login">
             <Button variant="ghost" size="sm" data-testid="button-login">Log In</Button>
-          </Link>
-          <Link href="/signup">
+          </a>
+          <a href="/signup">
             <Button size="sm" data-testid="button-signup">Get Started</Button>
-          </Link>
+          </a>
         </div>
       </nav>
 
@@ -356,11 +353,11 @@ export default function Shop() {
                 <h3 className="font-semibold text-lg">Explore our AI Art Gallery</h3>
                 <p className="text-muted-foreground text-sm">See amazing AI-generated artwork created with our platform</p>
               </div>
-              <Link href="/gallery">
+              <a href="/gallery">
                 <Button variant="outline" data-testid="button-explore-gallery">
                   View Gallery
                 </Button>
-              </Link>
+              </a>
             </div>
           </Card>
         </motion.div>
