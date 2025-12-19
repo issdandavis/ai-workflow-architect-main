@@ -1,6 +1,28 @@
-# AI Orchestration Hub - Production Deployment Guide
+# AI Workflow Architect
 
-A full-stack AI multi-agent orchestration platform with **free-first AI models**, cost controls, secure integrations, and centralized memory.
+> A full-stack AI multi-agent orchestration platform with **free-first AI models**, cost controls, secure integrations, and centralized memory.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://reactjs.org/)
+[![Express](https://img.shields.io/badge/Express-4.21-000000.svg)](https://expressjs.com/)
+
+## 📋 Table of Contents
+
+- [Key Highlights](#-key-highlights)
+- [Features](#features)
+- [Tech Stack](#-tech-stack)
+- [Quick Start](#-quick-start)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
+- [API Documentation](#-api-documentation)
+- [Architecture](#-architecture)
+- [Cost Optimization](#-cost-optimization)
+- [Security](#-security)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
 
 ## 💡 Key Highlights
 
@@ -27,7 +49,99 @@ A full-stack AI multi-agent orchestration platform with **free-first AI models**
 - **Rate Limiting**: Protection against abuse
 - **Branch-First Git**: Safe repository operations (no direct main pushes)
 
-## Required Environment Variables (Replit Secrets)
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 19** with TypeScript
+- **Vite** for blazing-fast development
+- **TanStack Query** for data fetching and caching
+- **Wouter** for lightweight routing
+- **Tailwind CSS v4** for styling
+- **shadcn/ui** component library (New York style)
+- **Framer Motion** for animations
+- **Monaco Editor** for code editing
+
+### Backend
+- **Node.js** with Express.js
+- **TypeScript** for type safety
+- **PostgreSQL** database
+- **Drizzle ORM** for database operations
+- **Passport.js** for authentication
+- **express-session** with PostgreSQL store
+- **Zod** for schema validation
+
+### AI & Integrations
+- **Multiple AI Providers**: OpenAI, Anthropic, xAI, Groq, Perplexity, HuggingFace, Ollama
+- **Cloud Storage**: Google Drive, OneDrive, Dropbox
+- **Services**: GitHub, Notion, Zapier, Stripe, Figma, World Anvil
+
+### Security & Performance
+- **Helmet** for security headers
+- **bcrypt** for password hashing
+- **CORS** protection
+- **Rate limiting** (express-rate-limit)
+- **WebSocket** support for real-time features
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** v20 or higher
+- **PostgreSQL** v14 or higher
+- **npm** v10 or higher
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/issdandavis/AI-Workflow-Architect.01.01.02.git
+   cd AI-Workflow-Architect.01.01.02
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Set up the database**
+   ```bash
+   # Create PostgreSQL database
+   createdb ai_orchestration
+   
+   # Push schema to database
+   npm run db:push
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**
+   
+   Navigate to `http://localhost:5000`
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+```
+
+## 🔐 Environment Variables
+
+See `.env.example` for a complete list of environment variables.
+
+### Required Environment Variables (Replit Secrets)
 
 ### Core (Required)
 - `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
@@ -53,34 +167,31 @@ A full-stack AI multi-agent orchestration platform with **free-first AI models**
 - `DROPBOX_ACCESS_TOKEN` - Dropbox access token
 - `NOTION_TOKEN` - Notion integration token
 
-## Quick Start
+> 💡 **Tip**: See `.env.example` for the complete list of environment variables with detailed comments and links to obtain API keys.
 
-### Development
+## 🚀 Deployment
 
-```bash
-# Install dependencies
-npm install
+### Deploying to Replit
 
-# Push database schema
-npm run db:push
+1. **Fork or Import** this repository to Replit
 
-# Start dev server (backend + frontend)
-npm run dev
-```
+2. **Add PostgreSQL database**
+   - Go to Tools → Database
+   - Create a PostgreSQL database
+   - `DATABASE_URL` will be auto-configured
 
-The app will be available at `http://localhost:5000`
+3. **Configure Replit Secrets**
+   - Go to Tools → Secrets
+   - Add required secrets (see `.env.example`)
+   - Minimum required:
+     - `SESSION_SECRET` (generate with `openssl rand -base64 32`)
+     - `APP_ORIGIN` (auto-detected from REPLIT_DOMAINS)
 
-### Production Build
+4. **Deploy**
+   - Click "Run" to start the application
+   - Use Replit's "Publish" button for production deployment
 
-```bash
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-```
-
-## Deployment Checklist
+### Deployment Checklist
 
 - [ ] **Add Required Secrets**: SESSION_SECRET, APP_ORIGIN
 - [ ] **Add AI Provider Keys**: At least one of OPENAI_API_KEY, ANTHROPIC_API_KEY, XAI_API_KEY
@@ -92,52 +203,88 @@ npm run start
 - [ ] **Review Audit Logs**: Verify logging works via GET /api/audit
 - [ ] **Deploy**: Use Replit's "Publish" button to make the app live
 
-## API Endpoints
+## 📚 API Documentation
+
+The platform provides a comprehensive REST API for all operations.
 
 ### Authentication
-- `POST /api/auth/signup` - Create account
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/me` - Get current user
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/signup` | Create a new user account |
+| `POST` | `/api/auth/login` | Login with credentials |
+| `POST` | `/api/auth/logout` | Logout current user |
+| `GET` | `/api/auth/me` | Get current user profile |
 
 ### Projects
-- `GET /api/projects` - List projects
-- `POST /api/projects` - Create project
 
-### Integrations
-- `GET /api/integrations` - List integrations
-- `POST /api/integrations/connect` - Connect provider
-- `POST /api/integrations/disconnect` - Disconnect provider
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/projects` | List all projects |
+| `POST` | `/api/projects` | Create a new project |
+| `GET` | `/api/projects/:id` | Get project details |
+| `PATCH` | `/api/projects/:id` | Update project |
+| `DELETE` | `/api/projects/:id` | Delete project |
 
 ### Agent Orchestration
-- `POST /api/agents/run` - Start agent run
-- `GET /api/agents/run/:runId` - Get run status
-- `GET /api/agents/stream/:runId` - Stream run logs (SSE)
 
-### Memory
-- `POST /api/memory/add` - Add memory item
-- `GET /api/memory/search?projectId=X&q=query` - Search memory
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/agents/run` | Start an agent run |
+| `GET` | `/api/agents/run/:runId` | Get run status and results |
+| `GET` | `/api/agents/stream/:runId` | Stream run logs (Server-Sent Events) |
+| `POST` | `/api/agents/cancel/:runId` | Cancel a running agent |
+
+### Memory & Knowledge Base
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/memory/add` | Add a memory item |
+| `GET` | `/api/memory/search` | Search memory (query params: `projectId`, `q`) |
+| `DELETE` | `/api/memory/:id` | Delete memory item |
+
+### Integrations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/integrations` | List connected integrations |
+| `POST` | `/api/integrations/connect` | Connect a new provider |
+| `POST` | `/api/integrations/disconnect` | Disconnect provider |
+| `GET` | `/api/integrations/:provider/status` | Check integration status |
 
 ### Git Operations
-- `GET /api/repos` - List configured repos
-- `POST /api/repos/commit` - Create branch-first commit
 
-### Health
-- `GET /api/health` - Health check
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/repos` | List configured repositories |
+| `POST` | `/api/repos/commit` | Create branch-first commit |
+| `GET` | `/api/repos/:id/branches` | List repository branches |
 
-## Security Features
+### Health & Monitoring
 
-- **Helmet**: Security headers
-- **CORS**: Locked to APP_ORIGIN
-- **Rate Limiting**: 
-  - Auth: 5 attempts per 15 min
-  - API: 100 requests per 15 min
-  - Agents: 10 runs per minute
-- **Session Management**: HTTP-only cookies
-- **RBAC**: Role-based access control
-- **Audit Logging**: All sensitive operations logged
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check endpoint |
+| `GET` | `/api/audit` | Get audit logs (admin only) |
 
-## Architecture
+> 📖 For detailed API documentation with request/response examples, see [docs/FULL_FEATURE_LIST.md](docs/FULL_FEATURE_LIST.md)
+
+## 🔒 Security Features
+
+- **🛡️ Helmet**: Security headers protection
+- **🔐 CORS**: Locked to APP_ORIGIN for cross-origin safety
+- **⏱️ Rate Limiting**: 
+  - Auth endpoints: 5 attempts per 15 minutes
+  - API endpoints: 100 requests per 15 minutes
+  - Agent runs: 10 runs per minute
+- **🍪 Session Management**: HTTP-only cookies with secure storage
+- **👥 RBAC**: Role-based access control (Owner, Admin, Member, Viewer)
+- **📝 Audit Logging**: Complete audit trail for all sensitive operations
+- **🔑 Password Security**: bcrypt hashing with salt rounds
+- **🚫 SQL Injection Protection**: Parameterized queries via Drizzle ORM
+- **✅ Input Validation**: Zod schema validation on all inputs
+
+## 🏗️ Architecture
 
 ```
 client/              # React frontend (Vite)
@@ -204,40 +351,98 @@ curl -X POST /api/budgets \
   -d '{"orgId":"<org-id>","period":"daily","limitUsd":"10.00"}'
 ```
 
-## Troubleshooting
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Code of conduct
+
+### Quick Contribution Steps
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 🐛 Troubleshooting
 
 ### "Database connection failed"
-- Verify DATABASE_URL is set in Secrets
+**Solution**: 
+- Verify `DATABASE_URL` is set in Secrets
 - Run `npm run db:push` to sync schema
+- Check PostgreSQL service is running
 
 ### "Session secret not set"
-- Add SESSION_SECRET to Replit Secrets (use a long random string)
+**Solution**: 
+- Add `SESSION_SECRET` to Replit Secrets
+- Generate one with: `openssl rand -base64 32`
 
 ### "Provider not configured"
+**Solution**: 
 - Add the appropriate API key to Replit Secrets
-- Example: OPENAI_API_KEY for OpenAI
+- Example: `OPENAI_API_KEY` for OpenAI
+- Check `.env.example` for required format
 
 ### "Budget exceeded"
-- Check current budget: GET /api/budgets
+**Solution**: 
+- Check current budget: `GET /api/budgets`
 - Reset or increase budget limits
+- Review cost tracking in audit logs
 
-## Documentation
+### Build Errors
+**Solution**:
+- Clear node_modules: `rm -rf node_modules && npm install`
+- Clear build cache: `rm -rf dist && npm run build`
+- Check Node.js version: `node --version` (should be v20+)
 
-- 📘 [Cost Optimization Quick Reference](docs/COST_OPTIMIZATION_QUICK_REF.md) - Fast guide to minimizing AI costs
-- 📗 [Free-First AI Strategy Issue](docs/FREE_FIRST_AI_STRATEGY_ISSUE.md) - Complete implementation plan
-- 📙 [Free AI Implementation Guide](docs/FREE_AI_IMPLEMENTATION_GUIDE.md) - Developer guide with code templates
-- 📕 [Full Feature List](docs/FULL_FEATURE_LIST.md) - Complete feature documentation
-- 📔 [Project Documentation](docs/PROJECT_DOCUMENTATION.md) - Detailed project information
+## 📚 Documentation
 
-## Support
+### Getting Started
+- 📘 [Contributing Guide](CONTRIBUTING.md) - How to contribute to this project
+- 📗 [API Documentation](docs/FULL_FEATURE_LIST.md) - Complete API reference
 
-For issues or questions, check:
-1. Replit logs for error messages
-2. Database connection status
-3. Environment variables in Secrets
-4. Audit logs via API for operation history
-5. [Documentation](docs/) for implementation guides
+### Cost & Optimization
+- 📙 [Cost Optimization Quick Reference](docs/COST_OPTIMIZATION_QUICK_REF.md) - Fast guide to minimizing AI costs
+- 📕 [Free-First AI Strategy](docs/FREE_FIRST_AI_STRATEGY_ISSUE.md) - Complete implementation plan
+- 📔 [Free AI Implementation Guide](docs/FREE_AI_IMPLEMENTATION_GUIDE.md) - Developer guide with code templates
 
-## License
+### Project Information
+- 📓 [Project Documentation](docs/PROJECT_DOCUMENTATION.md) - Detailed project information
+- 📖 [Full Feature List](docs/FULL_FEATURE_LIST.md) - Complete feature documentation
 
-MIT
+## 💬 Support
+
+Need help? Here's how to get support:
+
+1. **📖 Check Documentation**: Review the [docs/](docs/) folder for guides
+2. **🔍 Search Issues**: Look for similar issues in [GitHub Issues](../../issues)
+3. **🐛 Report Bugs**: Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md)
+4. **💡 Request Features**: Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md)
+5. **📝 Review Logs**: Check Replit logs or audit logs via `/api/audit`
+
+### Common Resources
+- Replit logs for error messages
+- Database connection status
+- Environment variables in Secrets
+- Audit logs via API for operation history
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**Built with ❤️ by [issdandavis](https://github.com/issdandavis)**
+
+⭐ Star this repo if you find it helpful!
+
+[Report Bug](../../issues) · [Request Feature](../../issues) · [Documentation](docs/)
+
+</div>
