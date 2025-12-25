@@ -37,16 +37,9 @@ console.log("Starting server initialization...");
 console.log(`NODE_ENV: ${process.env.NODE_ENV || "development"}`);
 console.log(`PORT: ${process.env.PORT || "5000"}`);
 
-// Auto-detect APP_ORIGIN from Replit deployment domains if not set
-if (!process.env.APP_ORIGIN && process.env.REPLIT_DOMAINS) {
-  const domains = process.env.REPLIT_DOMAINS.split(",");
-  process.env.APP_ORIGIN = `https://${domains[0]}`;
-  console.log(`Auto-detected APP_ORIGIN: ${process.env.APP_ORIGIN}`);
-}
-
 // Environment validation - warn but don't crash
 const requiredEnvVars = ["DATABASE_URL"];
-const productionEnvVars = ["SESSION_SECRET"];
+const productionEnvVars = ["SESSION_SECRET", "APP_ORIGIN"];
 
 const missingVars: string[] = [];
 for (const envVar of requiredEnvVars) {

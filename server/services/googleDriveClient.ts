@@ -1,35 +1,35 @@
 import { google } from 'googleapis';
 
-let connectionSettings: any = null;
+let oauth2Client: any = null;
 
 async function getAccessToken(): Promise<string> {
-  if (connectionSettings && connectionSettings.settings?.expires_at && 
-      new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    return connectionSettings.settings.access_token;
-  }
-  
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
+  // Use standard Google OAuth2 with environment variables
+  const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+  const accessToken = process.env.GOOGLE_DRIVE_ACCESS_TOKEN;
 
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found - Google Drive connection not available');
+  if (!clientId || !clientSecret) {
+    throw new Error('Google Drive credentials not configured. Please set GOOGLE_DRIVE_CLIENT_ID and GOOGLE_DRIVE_CLIENT_SECRET');
   }
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-drive',
-    { headers: { 'Accept': 'application/json', 'X_REPLIT_TOKEN': xReplitToken } }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  const accessToken = connectionSettings?.settings?.access_token || 
-                      connectionSettings?.settings?.oauth?.credentials?.access_token;
-  if (!connectionSettings || !accessToken) {
-    throw new Error('Google Drive not connected. Please connect in Integrations page.');
+  // If we have a direct access token, use it
+  if (accessToken) {
+    return accessToken;
   }
-  return accessToken;
+
+  // Otherwise, use refresh token to get new access token
+  if (!refreshToken) {
+    throw new Error('Google Drive not connected. Please set GOOGLE_DRIVE_REFRESH_TOKEN or GOOGLE_DRIVE_ACCESS_TOKEN');
+  }
+
+  if (!oauth2Client) {
+    oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+  }
+
+  const { credentials } = await oauth2Client.refreshAccessToken();
+  return credentials.access_token;
 }
 
 export async function getGoogleDriveClient() {

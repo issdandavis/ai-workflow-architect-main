@@ -2365,7 +2365,7 @@ export async function registerRoutes(
       }).parse(req.body);
 
       const { createStripeCheckoutSession } = await import("./services/stripeClient");
-      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}`;
+      const baseUrl = process.env.APP_ORIGIN || `http://localhost:5000`;
       const session = await createStripeCheckoutSession(
         customerId,
         priceId,
@@ -2401,7 +2401,7 @@ export async function registerRoutes(
       }).parse(req.body);
 
       const { createStripePortalSession } = await import("./services/stripeClient");
-      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}`;
+      const baseUrl = process.env.APP_ORIGIN || `http://localhost:5000`;
       const session = await createStripePortalSession(customerId, `${baseUrl}/settings`);
       res.json({ url: session.url });
     } catch (error) {

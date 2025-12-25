@@ -56,15 +56,17 @@ export function metaImagesPlugin(): Plugin {
 }
 
 function getDeploymentUrl(): string | null {
-  if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
-    const url = `https://${process.env.REPLIT_INTERNAL_APP_DOMAIN}`;
-    log('[meta-images] using internal app domain:', url);
+  // Use APP_ORIGIN environment variable for deployment URL
+  if (process.env.APP_ORIGIN) {
+    const url = process.env.APP_ORIGIN;
+    log('[meta-images] using APP_ORIGIN:', url);
     return url;
   }
 
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    const url = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-    log('[meta-images] using dev domain:', url);
+  // Fallback to localhost for development
+  if (process.env.NODE_ENV !== 'production') {
+    const url = 'http://localhost:5000';
+    log('[meta-images] using localhost for development:', url);
     return url;
   }
 
