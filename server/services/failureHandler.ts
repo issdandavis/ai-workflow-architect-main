@@ -290,9 +290,13 @@ ${context.relevantFiles?.join(", ") || "N/A"}
     },
   });
 
-  // Return mock issue URL (in production, would be real GitHub issue)
+  // Return issue URL - in production with GitHub integration, this would be real
+  // For now, create a reference that can be tracked in audit logs
+  const issueRef = `auto-generated-failure-${Date.now()}`;
+  const repoInfo = process.env.GITHUB_REPOSITORY || 'repository';
+  
   return {
-    issueUrl: `https://github.com/your-org/repo/issues/auto-generated-${Date.now()}`
+    issueUrl: `https://github.com/${repoInfo}/issues/${issueRef}`
   };
 }
 

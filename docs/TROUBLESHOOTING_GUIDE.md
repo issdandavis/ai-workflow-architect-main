@@ -719,6 +719,7 @@ npm run dev
 ## 📚 Additional Resources
 
 - **Quick Start**: [docs/ONBOARDING_GUIDE.md](ONBOARDING_GUIDE.md)
+- **Cost Transparency**: [docs/COST_TRANSPARENCY_GUIDE.md](COST_TRANSPARENCY_GUIDE.md)
 - **Cost Optimization**: [docs/COST_OPTIMIZATION_QUICK_REF.md](COST_OPTIMIZATION_QUICK_REF.md)
 - **Full Feature List**: [docs/FULL_FEATURE_LIST.md](FULL_FEATURE_LIST.md)
 - **API Documentation**: [docs/PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)
