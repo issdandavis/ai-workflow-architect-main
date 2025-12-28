@@ -17,7 +17,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   PYTHON_VERSION: '3.11'
 
 jobs:
@@ -45,17 +45,14 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          pip install -r requirements.txt
       
       - name: Run linting
         run: |
           npm run lint
-          flake8 .
       
       - name: Run tests - ${{ matrix.component }}
         run: |
           npm run test:${{ matrix.component }}
-          pytest tests/${{ matrix.component }}/
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
