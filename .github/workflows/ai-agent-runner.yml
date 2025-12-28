@@ -57,7 +57,6 @@ jobs:
         run: |
           pip install openai anthropic google-generativeai
           pip install langchain langchain-openai
-          pip install -r requirements-ai-agents.txt
       
       - name: Run ${{ github.event.inputs.agent_type || 'auto' }} Agent
         env:
