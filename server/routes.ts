@@ -37,8 +37,17 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  // Setup Replit Auth (social login) BEFORE other routes
-  await setupAuth(app);
+  // Setup Replit Auth (social login) BEFORE other routes - skip in dev if no REPL_ID
+  if (process.env.REPL_ID && process.env.REPL_ID !== 'test-client-id-12345') {
+    await setupAuth(app);
+  } else {
+    console.log('Skipping Replit auth setup for development');
+    // Mock session middleware for development
+    app.use((req, res, next) => {
+      req.user = { id: 'dev-user', email: 'dev@example.com' };
+      next();
+    });
+  }
   
   // Attach user to all requests
   app.use(attachUser);

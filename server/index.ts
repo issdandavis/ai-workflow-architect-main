@@ -170,7 +170,9 @@ app.use((req, res, next) => {
 
     // Test database connection
     try {
-      const { testDatabaseConnection } = await import("./db");
+      // Use mock database if no DATABASE_URL is set
+      const dbModule = process.env.DATABASE_URL ? "./db" : "./db-mock";
+      const { testDatabaseConnection } = await import(dbModule);
       const dbConnected = await testDatabaseConnection();
       console.log(`Database connection test: ${dbConnected ? "SUCCESS" : "FAILED"}`);
     } catch (dbErr) {
@@ -182,14 +184,13 @@ app.use((req, res, next) => {
     httpServer.listen(
       {
         port,
-        host: "0.0.0.0",
-        reusePort: true,
+        host: "localhost",
       },
       () => {
         log(`🚀 Server ready on port ${port}`);
         log(`Environment: ${process.env.NODE_ENV || "development"}`);
         log(`Database: ${process.env.DATABASE_URL ? "Connected" : "Not configured"}`);
-        console.log(`Server listening on 0.0.0.0:${port}`);
+        console.log(`Server listening on localhost:${port}`);
       },
     );
   } catch (startupError) {
